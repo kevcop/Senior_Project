@@ -1,0 +1,29 @@
+﻿@model Senior_Project.Models.Login
+
+@{
+    ViewData["Title"] = "Login";
+}
+<head>
+    <link href="~/css/StyleSheet.css" rel="stylesheet" type="text/css" />
+
+</head>
+<h1>Login</h1>
+<body class="center">
+<div class="center">
+    <p><b>Email</b> </p>
+
+    <form asp-controller="Login" asp-action="Enter" method="get"></form>
+    <input asp-for ="Email" />
+    <span asp-validation-for="Email"></span>
+
+
+    <p><b>Password</b></p>
+
+    <form asp-controller="Password" asp-action="Enter" method="get"></form>
+    <input asp-for="Password" />
+    <span asp-validation-for="Password"></span>
+</div>
+</body>
+<button
+    type ="button">Login!
+</button>

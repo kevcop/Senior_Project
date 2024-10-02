@@ -1,0 +1,39 @@
+﻿body {
+    background-color: #5e8edb;
+    position: center;
+}
+
+div{
+    margin: auto;
+}
+
+.center {
+    position: center;
+    top: 25%;
+    width: 100%;
+    text-align: center;
+    font-size: 18px;
+    margin-top: 0px;
+}
+
+
+form{
+    position: center;
+}
+
+h1 {
+    margin: 0;
+    padding: 0;
+    color: #e1e5eb;
+    text-shadow: 3px 3px 1px Black;
+    position: center;
+    margin: 10px;
+    font-size: 100px;
+    vertical-align: auto;
+    font-display: block;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif
+}
+button{
+    position:center;
+    margin:10px;
+}
