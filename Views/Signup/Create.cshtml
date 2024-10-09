@@ -1,0 +1,50 @@
+﻿@model Senior_Project.Models.Register
+@{
+    ViewData["Title"] = "Signup";
+}
+
+<h2>Create your account</h2>
+<body class="center">
+    <div class="center">
+        <p><b>First Name</b> </p>
+
+        <form asp-controller="Signup" asp-action="Enter" method="get"></form>
+        <input asp-for="firstName" />
+        <span asp-validation-for="firstName" class="text-danger"></span>
+
+        <p><b>Last Name</b> </p>
+
+        <form asp-controller="Signup" asp-action="Enter" method="get"></form>
+        <input asp-for="lastName" />
+        <span asp-validation-for="lastName" class="text-danger"></span>
+
+        <p><b>Email Address</b> </p>
+
+        <form asp-controller="Signup" asp-action="Enter" method="get"></form>
+        <input asp-for="emailAddress" />
+        <span asp-validation-for="emailAddress" class="text-danger"></span>
+
+        <p><b>Phone Number</b> </p>
+
+        <form asp-controller="Signup" asp-action="Enter" method="get"></form>
+        <input asp-for="birthdate" />
+        <span asp-validation-for="birthdate" class="text-danger"></span>
+
+
+        <p><b>Birth Date</b> </p>
+
+        <form asp-controller="Signup" asp-action="Enter" method="get"></form>
+        <input asp-for="lastName" />
+        <span asp-validation-for="lastName" class="text-danger"></span>
+    </div>
+</body>
+<button type="button">
+    Login!
+</button>
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
