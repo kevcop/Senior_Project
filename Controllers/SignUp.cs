@@ -33,7 +33,7 @@ namespace Senior_Project.Controllers
                 //return RedirectToAction(nameof(Index));
             }
             return View(register);
-            ;
+            
         }
 
     }
