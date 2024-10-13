@@ -1,32 +1,35 @@
-﻿@model Senior_Project.Models.Login
+﻿@model Senior_Project.Models.Register
 
 @{
     ViewData["Title"] = "Login";
 }
 <head>
     <link href="~/css/StyleSheet.css" rel="stylesheet" type="text/css" />
-
 </head>
 <h1>Login</h1>
 <body class="center">
-<div class="center">
-    <p><b>Email</b> </p>
+    <div class="center">
+        <!-- Login Form -->
+        <form asp-controller="Login" asp-action="Index" method="post">
+            <div>
+                <p><b>Email</b></p>
+                <input asp-for="emailAddress" />
+                <span asp-validation-for="emailAddress"></span>
+            </div>
 
-    <form asp-controller="Login" asp-action="Enter" method="get"></form>
-    <input asp-for ="Email" />
-    <span asp-validation-for="Email"></span>
+            <div>
+                <p><b>Password</b></p>
+                <input asp-for="password" type="password" />
+                <span asp-validation-for="password"></span>
+            </div>
 
+            <div>
+                <input type="submit" value="Login" />
+            </div>
+        </form>
 
-    <p><b>Password</b></p>
-
-    <form asp-controller="Password" asp-action="Enter" method="get"></form>
-    <input asp-for="Password" />
-    <span asp-validation-for="Password"></span>
-</div>
+        <p>
+            <a asp-action="Register">Create New</a>
+        </p>
+    </div>
 </body>
-<button
-    type ="button">Login!
-</button>
-<p>
-    <a asp-action="Register">Create New</a>
-</p>
