@@ -36,11 +36,12 @@ namespace Senior_Project.Controllers
                 // Set session value after successful login
                 HttpContext.Session.SetString("Email", user.emailAddress);
 
+
                 // Optional: Debugging statement to confirm session is set
                 System.Diagnostics.Debug.WriteLine("Session set: " + HttpContext.Session.GetString("Email"));
 
                 // Redirect to a different view upon successful login (for example, a dashboard)
-                return RedirectToAction("Dashboard");
+                return RedirectToAction("Index", "Landing");
             }
 
             // If login fails, return to the login view with an error message

@@ -1,0 +1,219 @@
+﻿@{
+    ViewData["Title"] = "Landing";
+}
+
+<!-- Header with profile link and search bar -->
+<div>
+    <!-- Profile link on the left -->
+    <a class href="/profile">Profile</a>
+
+    <!-- Search bar on the right -->
+    <div style="float: right;">
+        <input type="text" placeholder="Search...">
+        <button type="button">Search</button>
+    </div>
+</div>
+
+<h1 class="text-center">Landing page</h1>
+
+
+<!-- Popular Upcoming Events Section (One event visible at a time) -->
+<section id="popular-events">
+    <h2 class="text-center">Popular Upcoming Events</h2>
+
+    <!-- Carousel container -->
+    <div class="carousel-container">
+        <!-- Left arrow -->
+        <a class="prev" onclick="prevSlide()">&#10094;</a>
+
+        <!-- Event slides (One visible at a time) -->
+        <div class="event-slides" id="popular-events-container">
+            <!-- Event items will be dynamically injected here -->
+        </div>
+
+        <!-- Right arrow -->
+        <a class="next" onclick="nextSlide()">&#10095;</a>
+    </div>
+</section>
+
+<!-- Local Events Section (One event visible at a time) -->
+<section id="local-events">
+    <h2 class="text-center">Local Events Near You</h2>
+
+    <!-- Zip code input -->
+    <div class="zip-input">
+        <input type="text" id="zip-code" placeholder="Enter Zip Code">
+        <button onclick="fetchLocalEvents()">Search</button>
+    </div>
+
+    <!-- Carousel container for local events -->
+    <div class="carousel-container">
+        <!-- Left arrow -->
+        <a class="prev" onclick="prevSlideLocal()">&#10094;</a>
+
+        <!-- Event slides (One visible at a time) -->
+        <div class="event-slides-local" id="local-events-container">
+            <!-- Event items will be dynamically injected here -->
+        </div>
+
+        <!-- Right arrow -->
+        <a class="next" onclick="nextSlideLocal()">&#10095;</a>
+    </div>
+</section>
+
+<!-- Create Your Own Event Section -->
+<section id="create-event" class="text-center">
+    <h2>Host Your Own Event</h2>
+    <a href="/create-event" class="button">Create an Event</a>
+</section>
+
+<!-- Inline JavaScript for Carousel functionality and fetching API data -->
+<script>
+    let currentIndex = 0;
+    let localCurrentIndex = 0;
+    const apiKey = '8QsGHUSyehy7U8hMEzRWSyNNvMHsqdbX'; // Replace with your actual API key
+    const popularEventsContainer = document.getElementById('popular-events-container');
+    const localEventsContainer = document.getElementById('local-events-container');
+
+    // Fetch popular events from Ticketmaster API
+    async function fetchPopularEvents() {
+        try {
+            //SPORTING EVENTS
+            const sports_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?countryCode=US&apikey=${apiKey}`);
+            const sports_data = await sports_response.json();
+            //CONCERTS
+            const concerts_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?keyword=Concert&apikey=${apiKey}`);
+            const concerts_data = await concerts_response.json();
+            //THEATER/PLAYS
+            const theater_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?keyword=Theater&countryCode=US&apikey=${apiKey}`);
+            const theater_data = await theater_response.json();
+
+            console.log("Popular Events API Response:", sports_data._embedded.events[0]);
+
+            // Call function to dynamically update the event slides
+            updateEventSlides(sports_data._embedded.events, popularEventsContainer);
+            updateEventSlides(concerts_data._embedded.events, popularEventsContainer);
+            updateEventSlides(theater_data._embedded.events, popularEventsContainer);
+
+        } catch (error) {
+            console.error('Error fetching popular events:', error);
+        }
+    }
+
+    // Fetch local events from Ticketmaster API based on the entered zip code
+    async function fetchLocalEvents() {
+        const zipCode = document.getElementById('zip-code').value; // Get the entered zip code
+        console.log("Zip Code:", zipCode);
+
+        if (!zipCode) {
+            alert('Please enter a zip code!');
+            return;
+        }
+
+        try {
+            // Fetch events based on zip code
+            console.log(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=8QsGHUSyehy7U8hMEzRWSyNNvMHsqdbX`);
+            const response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=8QsGHUSyehy7U8hMEzRWSyNNvMHsqdbX&dmaId=324`);
+            const data = await response.json();
+
+            // Call function to dynamically update the event slides
+            updateEventSlides(data._embedded.events, localEventsContainer);
+        } catch (error) {
+            console.error('Error fetching local events:', error);
+        }
+    }
+
+    // Function to dynamically generate event slides and inject them into the HTML
+    function updateEventSlides(events, container) {
+
+        // Access the first event in the array
+        const event = events[0];
+
+        // Check if the event exists (array may be empty)
+        if (event) {
+            const eventItem = document.createElement('div');
+            eventItem.classList.add('event-item');
+
+            // Populate the event item with relevant data
+            eventItem.innerHTML = `
+                    <img src="${event.images[0].url}" alt="${event.name}">
+                    <div class="event-info">
+                        <h3>${event.name}</h3>
+                        <p>Date: ${new Date(event.dates.start.localDate).toLocaleDateString()} | Location: ${event._embedded.venues[0].name}</p>
+                        <a href="${event.url}" target="_blank" class="button">Learn More</a>
+                    </div>
+                `;
+
+            // Append the first event item to the container
+            container.appendChild(eventItem);
+        } else {
+            console.error('No events found.');
+        }
+
+        // After populating, reset the index and show the first slide
+        showSlides(currentIndex, container);
+    }
+
+    // Functions to show and navigate between slides for popular events
+    function showSlides(n, container) {
+        let slides = container.getElementsByClassName("event-item");
+        let totalSlides = slides.length;
+
+        for (let i = 0; i < totalSlides; i++) {
+            slides[i].style.display = "none";
+        }
+
+        if (n >= totalSlides) {
+            currentIndex = 0;
+        }
+        if (n < 0) {
+            currentIndex = totalSlides - 1;
+        }
+
+        slides[currentIndex].style.display = "block";
+    }
+
+    function nextSlide() {
+        currentIndex++;
+        showSlides(currentIndex, popularEventsContainer);
+    }
+
+    function prevSlide() {
+        currentIndex--;
+        showSlides(currentIndex, popularEventsContainer);
+    }
+
+    // Functions to show and navigate between slides for local events
+    function showSlidesLocal(n, container) {
+        let slides = container.getElementsByClassName("event-item");
+        let totalSlides = slides.length;
+
+        for (let i = 0; i < totalSlides; i++) {
+            slides[i].style.display = "none";
+        }
+
+        if (n >= totalSlides) {
+            localCurrentIndex = 0;
+        }
+        if (n < 0) {
+            localCurrentIndex = totalSlides - 1;
+        }
+
+        slides[localCurrentIndex].style.display = "block";
+    }
+
+    function nextSlideLocal() {
+        localCurrentIndex++;
+        showSlidesLocal(localCurrentIndex, localEventsContainer);
+    }
+
+    function prevSlideLocal() {
+        localCurrentIndex--;
+        showSlidesLocal(localCurrentIndex, localEventsContainer);
+    }
+
+    // Fetch events on page load
+    window.onload = function () {
+        fetchPopularEvents();
+    };
+</script>
