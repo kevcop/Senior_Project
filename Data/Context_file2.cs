@@ -7,12 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Senior_Project.Data
 {
-    public class Context_file: DbContext
+    public class Context_file2 : DbContext
 
     {
-        public Context_file(DbContextOptions<Context_file> options): base(options) { }
-    
-        public DbSet<Senior_Project.Models.Register> Register { get; set; }
+        public Context_file2(DbContextOptions<Context_file2> options) : base(options) { }
 
         public DbSet<Senior_Project.Models.UserEvent> UserEvent { get; set; }
     }

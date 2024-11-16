@@ -8,10 +8,10 @@ using Senior_Project.Data;
 
 #nullable disable
 
-namespace Senior_Project.Migrations
+namespace Senior_Project.Migrations.Context_file2Migrations
 {
-    [DbContext(typeof(Context_file))]
-    partial class Context_fileModelSnapshot : ModelSnapshot
+    [DbContext(typeof(Context_file2))]
+    partial class Context_file2ModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {

@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Senior_Project.Data;
 
 #nullable disable
 
-namespace Senior_Project.Migrations
+namespace Senior_Project.Migrations.Context_file2Migrations
 {
-    [DbContext(typeof(Context_file))]
-    partial class Context_fileModelSnapshot : ModelSnapshot
+    [DbContext(typeof(Context_file2))]
+    [Migration("20241116174832_Testing2")]
+    partial class Testing2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

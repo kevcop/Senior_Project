@@ -21,7 +21,7 @@ namespace Senior_Project.Controllers
         {
             return View();
         }
-
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index([Bind("firstName,lastName,emailAddress,phoneNumber,birthDate,username,password")] Register register)

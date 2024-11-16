@@ -5,6 +5,9 @@ using Senior_Project.Data;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<Context_file>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Context_file") ?? throw new InvalidOperationException("Connection string 'SeniorProject_Context' not found.")));
+builder.Services.AddDbContext<Context_file2>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Context_file2") ?? throw new InvalidOperationException("Connection string 'SeniorProject_Context' not found.")));
+
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
