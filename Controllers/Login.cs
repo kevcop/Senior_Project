@@ -16,11 +16,11 @@ namespace Senior_Project.Controllers
 {
     public class Login:Controller
     {
-        private readonly Context_file _context;
+        private readonly New_Context _context;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ILogger<Login> _logger;
         private readonly ISession _session;
-        public Login(Context_file context,ILogger<Login> logger, IHttpContextAccessor httpContextAccessor ) { _context = context;
+        public Login(New_Context context,ILogger<Login> logger, IHttpContextAccessor httpContextAccessor ) { _context = context;
             _logger = logger;
             _session = httpContextAccessor.HttpContext.Session;
                     }
@@ -34,11 +34,14 @@ namespace Senior_Project.Controllers
             if (user != null)
             {
                 // Set session value after successful login
+                HttpContext.Session.SetInt32("UserId", user.Id); // Save the UserId
                 HttpContext.Session.SetString("Email", user.emailAddress);
 
 
                 // Optional: Debugging statement to confirm session is set
-                System.Diagnostics.Debug.WriteLine("Session set: " + HttpContext.Session.GetString("Email"));
+                System.Diagnostics.Debug.WriteLine("Session set: UserId = " + HttpContext.Session.GetInt32("UserId"));
+                System.Diagnostics.Debug.WriteLine("Session set: " + HttpContext.Session.GetString("UserId"));
+
 
                 // Redirect to a different view upon successful login (for example, a dashboard)
                 return RedirectToAction("Index", "Landing");

@@ -12,7 +12,7 @@ namespace Senior_Project.Data
     {
         public Context_file2(DbContextOptions<Context_file2> options) : base(options) { }
 
-        public DbSet<Senior_Project.Models.UserEvent> UserEvent { get; set; }
+        public DbSet<Senior_Project.Models.Event> Events { get; set; }
     }
 
 

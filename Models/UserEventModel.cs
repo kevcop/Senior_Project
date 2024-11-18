@@ -7,7 +7,7 @@ using System.Web;
 
 namespace Senior_Project.Models
 {
-    public class UserEvent
+    public class Event
     {
         [Key]
         public int EventID { get; set; }
@@ -38,5 +38,11 @@ namespace Senior_Project.Models
         public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public bool IsPublic { get; set; } = true;
+
+        public bool IsUserCreated { get; set; } = false; // True for user-created events, false for popular events
+
+        public virtual ICollection<EventImage> Images { get; set; }
+
+
     }
 }

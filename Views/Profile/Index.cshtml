@@ -1,43 +1,240 @@
-﻿@model Senior_Project.Models.UserEvent
+﻿@model Senior_Project.Models.Profile
 
-<h2>Create Event</h2>
+@{
+    ViewData["Title"] = "Profile";
+}
 
-<form asp-action="Create" method="post">
-    <div>
-        <label asp-for="EventName"></label>
-        <input asp-for="EventName" />
-        <span asp-validation-for="EventName" class="text-danger"></span>
+<head>
+    <link href="~/css/styles.css" rel="stylesheet" type="text/css" />
+</head>
+
+<div class="profile-container">
+    <h1 class="text-center">Your Profile</h1>
+
+    <!-- User Bio -->
+    <section class="profile-section">
+        <h2>Bio</h2>
+        <textarea asp-for="Bio" rows="4" placeholder="Tell us about yourself..." class="profile-bio"></textarea>
+    </section>
+
+    <!-- User Interests -->
+    <section class="profile-section">
+        <h2>Interests</h2>
+        <textarea asp-for="Interests" rows="4" placeholder="What are your interests?" class="profile-interests"></textarea>
+    </section>
+
+    <!-- Attending Events -->
+    <section class="profile-section">
+        <h2>Attending Events</h2>
+        <button class="btn btn-primary" onclick="openEventSearchModal('attending')">Select Events</button>
+        <div class="carousel-container">
+            <a class="prev" onclick="prevSlideAttending()">&#10094;</a>
+            <div class="event-slides" id="attending-events-container">
+                @if (Model.AttendingEvents != null && Model.AttendingEvents.Any())
+                {
+                    foreach (var eventId in Model.AttendingEvents)
+                    {
+                        <div class="event-item">
+                            <p>Event ID: @eventId</p>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>You are not attending any events yet.</p>
+                }
+            </div>
+            <a class="next" onclick="nextSlideAttending()">&#10095;</a>
+        </div>
+    </section>
+
+    <!-- Past Events -->
+    <section class="profile-section">
+        <h2>Past Events</h2>
+        <button class="btn btn-primary" onclick="openEventSearchModal('past')">Select Events</button>
+        <div class="carousel-container">
+            <a class="prev" onclick="prevSlidePast()">&#10094;</a>
+            <div class="event-slides" id="past-events-container">
+                @if (Model.PastEvents != null && Model.PastEvents.Any())
+                {
+                    foreach (var eventId in Model.PastEvents)
+                    {
+                        <div class="event-item">
+                            <p>Event ID: @eventId</p>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No past events found.</p>
+                }
+            </div>
+            <a class="next" onclick="nextSlidePast()">&#10095;</a>
+        </div>
+    </section>
+
+    <!-- Save Button -->
+    <button type="submit" class="save-button">Save Profile</button>
+</div>
+
+<!-- Modal Popup -->
+<div id="eventSearchModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeEventSearchModal()">&times;</span>
+        <h3>Search for Events</h3>
+        <input type="text" id="searchInput" placeholder="Search by event or artist name" oninput="searchEvents()" />
+        <div id="search-results"></div>
+        <h4>Selected Events</h4>
+        <ul id="selected-events-list">
+            <!-- User selections will be added here -->
+        </ul>
+        <button class="btn btn-primary" onclick="saveSelections()">Save Selections</button>
     </div>
+</div>
 
-    <div>
-        <label asp-for="Description"></label>
-        <textarea asp-for="Description"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
+<script>
+    let attendingIndex = 0;
+    let pastIndex = 0;
+    let currentSelectionType = ""; // Tracks whether user is selecting for attending or past events
+    let selectedEvents = { attending: [], past: [] }; // Stores selected events
 
-    <div>
-        <label asp-for="EventDate"></label>
-        <input asp-for="EventDate" type="datetime-local" />
-        <span asp-validation-for="EventDate" class="text-danger"></span>
-    </div>
+    // Attending Events Carousel
+    function prevSlideAttending() {
+        changeSlide(attendingIndex--, "attending-events-container");
+    }
 
-    <div>
-        <label asp-for="Location"></label>
-        <input asp-for="Location" />
-        <span asp-validation-for="Location" class="text-danger"></span>
-    </div>
+    function nextSlideAttending() {
+        changeSlide(attendingIndex++, "attending-events-container");
+    }
 
-    <div>
-        <label asp-for="Category"></label>
-        <input asp-for="Category" />
-        <span asp-validation-for="Category" class="text-danger"></span>
-    </div>
+    // Past Events Carousel
+    function prevSlidePast() {
+        changeSlide(pastIndex--, "past-events-container");
+    }
 
-    <div>
-        <label asp-for="IsPublic"></label>
-        <input asp-for="IsPublic" type="checkbox" />
-        <span asp-validation-for="IsPublic" class="text-danger"></span>
-    </div>
+    function nextSlidePast() {
+        changeSlide(pastIndex++, "past-events-container");
+    }
 
-    <button type="submit">Create Event</button>
-</form>
+    function changeSlide(index, containerId) {
+        const container = document.getElementById(containerId);
+        const slides = container.getElementsByClassName("event-item");
+        if (slides.length === 0) return;
+
+        for (let i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+        }
+
+        if (index >= slides.length) index = 0;
+        if (index < 0) index = slides.length - 1;
+
+        slides[index].style.display = "block";
+    }
+
+    // Open the event search modal
+    function openEventSearchModal(type) {
+        currentSelectionType = type;
+        document.getElementById("eventSearchModal").style.display = "block";
+    }
+
+    // Close the event search modal
+    function closeEventSearchModal() {
+        document.getElementById("eventSearchModal").style.display = "none";
+        document.getElementById("searchInput").value = "";
+        document.getElementById("search-results").innerHTML = "";
+    }
+
+    // Perform a search query
+    async function searchEvents() {
+        const query = document.getElementById("searchInput").value;
+        if (query.trim() === "") {
+            document.getElementById("search-results").innerHTML = "";
+            return;
+        }
+
+        const response = await fetch(`/Event/Search?query=${query}`);
+        const results = await response.json();
+
+        const resultsDiv = document.getElementById("search-results");
+        resultsDiv.innerHTML = "";
+
+        results.forEach(event => {
+            const div = document.createElement("div");
+            div.innerHTML = `
+                <p>${event.eventName} (${event.artist})</p>
+                <button onclick="addEventToSelection(${event.eventID}, '${event.eventName}')">Add</button>
+            `;
+            resultsDiv.appendChild(div);
+        });
+    }
+
+    // Add an event to the user's selection
+    function addEventToSelection(eventID, eventName) {
+        if (!selectedEvents[currentSelectionType].some(event => event.id === eventID)) {
+            selectedEvents[currentSelectionType].push({ id: eventID, name: eventName });
+
+            const list = document.getElementById("selected-events-list");
+            const li = document.createElement("li");
+            li.id = `event-${eventID}`;
+            li.innerHTML = `${eventName} <button onclick="removeEventFromSelection(${eventID})">Remove</button>`;
+            list.appendChild(li);
+        }
+    }
+
+    // Remove an event from the user's selection
+    function removeEventFromSelection(eventID) {
+        selectedEvents[currentSelectionType] = selectedEvents[currentSelectionType].filter(event => event.id !== eventID);
+        const item = document.getElementById(`event-${eventID}`);
+        if (item) {
+            item.remove();
+        }
+    }
+
+    // Save selections and update the profile
+    async function saveSelections() {
+        try {
+            console.log("Starting saveSelections...");
+
+            // Log the selected events being sent to the backend
+            console.log("Selected Events Payload:", JSON.stringify(selectedEvents));
+
+            const response = await fetch(`/Profile/UpdateSelections`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(selectedEvents)
+            });
+
+            console.log("Response Status:", response.status);
+
+            if (response.ok) {
+                const responseData = await response.text();
+                console.log("Response Data:", responseData);
+
+                alert("Selections saved successfully!");
+                document.getElementById("attending-events-container").innerHTML = selectedEvents.attending
+                    .map(event => `<div class="event-item">${event.name}</div>`)
+                    .join("");
+
+                document.getElementById("past-events-container").innerHTML = selectedEvents.past
+                    .map(event => `<div class="event-item">${event.name}</div>`)
+                    .join("");
+
+                closeEventSearchModal();
+            } else {
+                const errorText = await response.text();
+                console.error("Failed to save selections. Error Response:", errorText);
+                alert("Failed to save selections. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error in saveSelections:", error);
+            alert("An unexpected error occurred. Please try again.");
+        }
+    }
+
+
+    // Initialize carousels
+    window.onload = function () {
+        changeSlide(0, "attending-events-container");
+        changeSlide(0, "past-events-container");
+    };
+</script>

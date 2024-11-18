@@ -9,9 +9,9 @@ namespace Senior_Project.Controllers
 {
     public class SignUp:Controller
     {
-        private readonly Context_file _context;
+        private readonly New_Context _context;
 
-        public SignUp(Context_file context) { _context = context; }
+        public SignUp(New_Context context) { _context = context; }
         public IActionResult Index()
         {
             return View();

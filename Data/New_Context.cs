@@ -7,16 +7,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Senior_Project.Data
 {
-    public class Context_file: DbContext
+    public class New_Context : DbContext
 
     {
-        public Context_file(DbContextOptions<Context_file> options): base(options) { }
-    
+        public New_Context(DbContextOptions<New_Context> options) : base(options) { }
+
         public DbSet<Register> Register { get; set; }
 
         public DbSet<Event> Events { get; set; }
 
         public DbSet<EventImage> Images { get; set; }
+
+        public DbSet<Profile> Profiles { get; set; }
 
     }
 

@@ -3,31 +3,46 @@ using Senior_Project.Models;
 using Senior_Project.Data;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<Context_file>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Context_file") ?? throw new InvalidOperationException("Connection string 'SeniorProject_Context' not found.")));
+
+// Register your DbContexts
+builder.Services.AddDbContext<New_Context>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("New_Context") ?? throw new InvalidOperationException("Connection string 'New_Context' not found.")));
 builder.Services.AddDbContext<Context_file2>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Context_file2") ?? throw new InvalidOperationException("Connection string 'SeniorProject_Context' not found.")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Context_file2") ?? throw new InvalidOperationException("Connection string 'Context_file2' not found.")));
 
-
-// Add services to the container.
+// Add services to the container
 builder.Services.AddControllersWithViews();
-
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromSeconds(1);
+    options.IdleTimeout = TimeSpan.FromMinutes(5);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Seed the database
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    try
+    {
+        var context = services.GetRequiredService<New_Context>();
+        DataSeeder.Seed(context); // Call your seeding logic
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred while seeding the database: {ex.Message}");
+    }
+}
+
+// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 

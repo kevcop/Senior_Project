@@ -10,9 +10,9 @@ namespace Senior_Project.Controllers
 {
     public class EventCreationController : Controller
     {
-        private readonly Context_file _context;
+        private readonly New_Context _context;
 
-        public EventCreationController(Context_file context)
+        public EventCreationController(New_Context context)
         {
             _context = context;
         }
@@ -31,7 +31,7 @@ namespace Senior_Project.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(UserEvent userEvent)
+        public async Task<IActionResult> Create(Event userEvent)
         {
             if (ModelState.IsValid)
             {
@@ -39,7 +39,7 @@ namespace Senior_Project.Controllers
                 if (HttpContext.Session.GetString("UserID") != null)
                 {
                     userEvent.UserID = int.Parse(HttpContext.Session.GetString("UserID"));
-                    _context.UserEvent.Add(userEvent);
+                    _context.Events.Add(userEvent);
                     await _context.SaveChangesAsync();
                     return RedirectToAction("Index", "Landing"); // Redirect to landing or a success page
                 }
