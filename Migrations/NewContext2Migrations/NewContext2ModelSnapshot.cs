@@ -8,10 +8,10 @@ using Senior_Project.Data;
 
 #nullable disable
 
-namespace Senior_Project.Migrations.New_
+namespace Senior_Project.Migrations.NewContext2Migrations
 {
-    [DbContext(typeof(New_Context))]
-    partial class New_ContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(NewContext2))]
+    partial class NewContext2ModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {

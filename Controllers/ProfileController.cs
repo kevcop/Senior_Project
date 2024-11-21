@@ -13,12 +13,12 @@ namespace Senior_Project.Controllers
 {
     public class ProfileController : Controller
     {
-        private readonly New_Context _context;
+        private readonly NewContext2 _context;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ILogger<ProfileController> _logger;
         private readonly ISession _session;
 
-        public ProfileController(New_Context context, IHttpContextAccessor contextAccessor, ILogger<ProfileController> logger)
+        public ProfileController(NewContext2 context, IHttpContextAccessor contextAccessor, ILogger<ProfileController> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _contextAccessor = contextAccessor ?? throw new ArgumentNullException(nameof(contextAccessor));
@@ -26,42 +26,85 @@ namespace Senior_Project.Controllers
         }
         public IActionResult Index()
         {
-            var profile = new Senior_Project.Models.Profile
-
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
             {
-                Bio = "Sample bio",
-                Interests = "Sample interests",
-                AttendingEvents = new List<int>(), // Initialize as an empty list
-                PastEvents = new List<int>() // Initialize as an empty list
-            };
+                _logger.LogWarning("Session does not contain a valid UserId.");
+                return RedirectToAction("Login", "Account");
+            }
+
+            var profile = _context.Profiles.FirstOrDefault(p => p.UserId == userId);
+            if (profile == null)
+            {
+                _logger.LogWarning($"Profile not found for UserId: {userId}. Creating a new profile.");
+                profile = new Profile
+                {
+                    UserId = userId.Value,
+                    Bio = "Default bio",
+                    Interests = "Default interests",
+                    AttendingEvents = new List<int>(),
+                    PastEvents = new List<int>()
+                };
+
+                _context.Profiles.Add(profile);
+                _context.SaveChanges();
+            }
+
+            // Retrieve images for attending and past events
+            var attendingEventImages = _context.Images
+                .Where(img => profile.AttendingEvents.Contains(img.EventId))
+                .ToList();
+
+            var pastEventImages = _context.Images
+                .Where(img => profile.PastEvents.Contains(img.EventId))
+                .ToList();
+
+            ViewBag.AttendingEventImages = attendingEventImages;
+            ViewBag.PastEventImages = pastEventImages;
 
             return View(profile);
         }
-        [HttpPost]
+
+
         [HttpPost]
         public IActionResult UpdateSelections([FromBody] Dictionary<string, List<int>> selections)
         {
             try
             {
-                // Log the session details
-                System.Diagnostics.Debug.WriteLine("Session Keys: " + string.Join(", ", HttpContext.Session.Keys));
-                System.Diagnostics.Debug.WriteLine("Session UserId: " + HttpContext.Session.GetInt32("UserId"));
+                // Check if selections parameter is null
+                if (selections == null)
+                {
+                    _logger.LogWarning("UpdateSelections called with a null selections parameter.");
+                    return BadRequest("Selections parameter cannot be null.");
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Debug: Received selections: {Newtonsoft.Json.JsonConvert.SerializeObject(selections)}");
 
                 // Retrieve the user ID from the session
                 var userId = HttpContext.Session.GetInt32("UserId");
                 if (userId == null)
                 {
-                    _logger.LogWarning("Attempted to update selections without a valid session. UserId is null.");
+                    _logger.LogWarning("Session does not contain a valid UserId.");
                     return Unauthorized();
                 }
+                System.Diagnostics.Debug.WriteLine($"Debug: Retrieved UserId from session: {userId}");
 
-                // Retrieve the user's profile (without Include)
+                // Retrieve the user's profile
                 var profile = _context.Profiles.FirstOrDefault(p => p.UserId == userId);
-
                 if (profile == null)
                 {
-                    _logger.LogWarning($"Profile not found for user with ID: {userId}");
-                    return NotFound();
+                    _logger.LogWarning($"Profile not found for UserId: {userId}. Creating a new profile.");
+                    profile = new Profile
+                    {
+                        UserId = userId.Value,
+                        Bio = "Default bio",
+                        Interests = "Default interests",
+                        AttendingEvents = new List<int>(),
+                        PastEvents = new List<int>()
+                    };
+
+                    _context.Profiles.Add(profile);
+                    _context.SaveChanges();
                 }
 
                 // Update Attending and Past Events
@@ -87,7 +130,7 @@ namespace Senior_Project.Controllers
                 _context.Profiles.Update(profile);
                 _context.SaveChanges();
 
-                _logger.LogInformation($"Successfully updated profile selections for user with ID: {userId}");
+                _logger.LogInformation($"Successfully updated profile selections for UserId: {userId}");
                 return Ok();
             }
             catch (Exception ex)
@@ -96,6 +139,8 @@ namespace Senior_Project.Controllers
                 return StatusCode(500, "An internal error occurred. Please try again later.");
             }
         }
+
+
 
 
     }

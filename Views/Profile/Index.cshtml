@@ -26,16 +26,16 @@
     <!-- Attending Events -->
     <section class="profile-section">
         <h2>Attending Events</h2>
-        <button class="btn btn-primary" onclick="openEventSearchModal('attending')">Select Events</button>
+        <button class="btn btn-primary" onclick="openEventSearchModal('attending')">Search and Add Events</button>
         <div class="carousel-container">
             <a class="prev" onclick="prevSlideAttending()">&#10094;</a>
             <div class="event-slides" id="attending-events-container">
-                @if (Model.AttendingEvents != null && Model.AttendingEvents.Any())
+                @if (ViewBag.AttendingEventImages != null && ViewBag.AttendingEventImages.Count > 0)
                 {
-                    foreach (var eventId in Model.AttendingEvents)
+                    foreach (var image in ViewBag.AttendingEventImages)
                     {
                         <div class="event-item">
-                            <p>Event ID: @eventId</p>
+                            <img src="data:@image.ContentType;base64,@Convert.ToBase64String(image.ImageByte)" alt="Event Image" class="event-image" />
                         </div>
                     }
                 }
@@ -51,16 +51,16 @@
     <!-- Past Events -->
     <section class="profile-section">
         <h2>Past Events</h2>
-        <button class="btn btn-primary" onclick="openEventSearchModal('past')">Select Events</button>
+        <button class="btn btn-primary" onclick="openEventSearchModal('past')">Search and Add Events</button>
         <div class="carousel-container">
             <a class="prev" onclick="prevSlidePast()">&#10094;</a>
             <div class="event-slides" id="past-events-container">
-                @if (Model.PastEvents != null && Model.PastEvents.Any())
+                @if (ViewBag.PastEventImages != null && ViewBag.PastEventImages.Count > 0)
                 {
-                    foreach (var eventId in Model.PastEvents)
+                    foreach (var image in ViewBag.PastEventImages)
                     {
                         <div class="event-item">
-                            <p>Event ID: @eventId</p>
+                            <img src="data:@image.ContentType;base64,@Convert.ToBase64String(image.ImageByte)" alt="Past Event Image" class="event-image" />
                         </div>
                     }
                 }
@@ -72,9 +72,6 @@
             <a class="next" onclick="nextSlidePast()">&#10095;</a>
         </div>
     </section>
-
-    <!-- Save Button -->
-    <button type="submit" class="save-button">Save Profile</button>
 </div>
 
 <!-- Modal Popup -->
@@ -88,7 +85,7 @@
         <ul id="selected-events-list">
             <!-- User selections will be added here -->
         </ul>
-        <button class="btn btn-primary" onclick="saveSelections()">Save Selections</button>
+        <button class="btn btn-primary" onclick="saveSelectionsToProfile()">Save Selected Events</button>
     </div>
 </div>
 
@@ -161,9 +158,9 @@
         results.forEach(event => {
             const div = document.createElement("div");
             div.innerHTML = `
-                <p>${event.eventName} (${event.artist})</p>
-                <button onclick="addEventToSelection(${event.eventID}, '${event.eventName}')">Add</button>
-            `;
+                    <p>${event.EventName}</p>
+                    <button onclick="addEventToSelection(${event.EventID}, '${event.EventName}')">Add</button>
+                `;
             resultsDiv.appendChild(div);
         });
     }
@@ -172,69 +169,46 @@
     function addEventToSelection(eventID, eventName) {
         if (!selectedEvents[currentSelectionType].some(event => event.id === eventID)) {
             selectedEvents[currentSelectionType].push({ id: eventID, name: eventName });
-
-            const list = document.getElementById("selected-events-list");
-            const li = document.createElement("li");
-            li.id = `event-${eventID}`;
-            li.innerHTML = `${eventName} <button onclick="removeEventFromSelection(${eventID})">Remove</button>`;
-            list.appendChild(li);
+            updateSelectedEventsList();
         }
+    }
+
+    // Update selected events list
+    function updateSelectedEventsList() {
+        const list = document.getElementById("selected-events-list");
+        list.innerHTML = selectedEvents[currentSelectionType]
+            .map(event => `<li>${event.name} <button onclick="removeEventFromSelection(${event.id})">Remove</button></li>`)
+            .join("");
     }
 
     // Remove an event from the user's selection
     function removeEventFromSelection(eventID) {
         selectedEvents[currentSelectionType] = selectedEvents[currentSelectionType].filter(event => event.id !== eventID);
-        const item = document.getElementById(`event-${eventID}`);
-        if (item) {
-            item.remove();
-        }
+        updateSelectedEventsList();
     }
 
-    // Save selections and update the profile
-    async function saveSelections() {
+    // Save selected events
+    async function saveSelectionsToProfile() {
         try {
-            console.log("Starting saveSelections...");
+            const payload = {};
+            payload[currentSelectionType] = selectedEvents[currentSelectionType].map(event => event.id);
 
-            // Log the selected events being sent to the backend
-            console.log("Selected Events Payload:", JSON.stringify(selectedEvents));
-
-            const response = await fetch(`/Profile/UpdateSelections`, {
+            const response = await fetch(`/Profile/SaveEvents`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(selectedEvents)
+                body: JSON.stringify(payload),
             });
 
-            console.log("Response Status:", response.status);
-
             if (response.ok) {
-                const responseData = await response.text();
-                console.log("Response Data:", responseData);
-
-                alert("Selections saved successfully!");
-                document.getElementById("attending-events-container").innerHTML = selectedEvents.attending
-                    .map(event => `<div class="event-item">${event.name}</div>`)
-                    .join("");
-
-                document.getElementById("past-events-container").innerHTML = selectedEvents.past
-                    .map(event => `<div class="event-item">${event.name}</div>`)
-                    .join("");
-
+                alert("Events saved successfully!");
                 closeEventSearchModal();
+                location.reload(); // Reload to show updated events in the carousel
             } else {
-                const errorText = await response.text();
-                console.error("Failed to save selections. Error Response:", errorText);
-                alert("Failed to save selections. Please try again.");
+                alert("Error saving events. Please try again.");
             }
         } catch (error) {
-            console.error("Error in saveSelections:", error);
+            console.error("Error saving events:", error);
             alert("An unexpected error occurred. Please try again.");
         }
     }
-
-
-    // Initialize carousels
-    window.onload = function () {
-        changeSlide(0, "attending-events-container");
-        changeSlide(0, "past-events-container");
-    };
 </script>

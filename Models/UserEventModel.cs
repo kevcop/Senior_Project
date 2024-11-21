@@ -43,6 +43,9 @@ namespace Senior_Project.Models
 
         public virtual ICollection<EventImage> Images { get; set; }
 
+        public string ExternalEventID { get; set; }
+
+
 
     }
 }

@@ -78,38 +78,81 @@
     }
 
     // Fetch popular events from Ticketmaster API (one sporting event, one concert, one theater event)
-    async function fetchPopularEvents() {
-        try {
-            const sports_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?countryCode=US&apikey=${apiKey}`);
-            const sports_data = await sports_response.json();
+async function fetchPopularEvents() {
+    try {
+        const sports_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?countryCode=US&apikey=${apiKey}`);
+        const sports_data = await sports_response.json();
 
-            // Log the API response data to the console
-            console.log("Popular Events API Response:", sports_data);
-
-            if (sports_data._embedded && sports_data._embedded.events.length > 0) {
-                updateSingleEvent(sports_data._embedded.events[0], popularEventsContainer);
+        if (sports_data._embedded && sports_data._embedded.events.length > 0) {
+            for (const event of sports_data._embedded.events) {
+                // Save the event to the database
+                await saveEventToDatabase(event);
+                updateSingleEvent(event, popularEventsContainer);
             }
-
-            const concerts_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?keyword=Concert&apikey=${apiKey}`);
-            const concerts_data = await concerts_response.json();
-            console.log("Concerts API Response:", concerts_data);
-
-            if (concerts_data._embedded && concerts_data._embedded.events.length > 0) {
-                updateSingleEvent(concerts_data._embedded.events[0], popularEventsContainer);
-            }
-
-            const theater_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?keyword=Theater&countryCode=US&apikey=${apiKey}`);
-            const theater_data = await theater_response.json();
-            console.log("Theater API Response:", theater_data);
-
-            if (theater_data._embedded && theater_data._embedded.events.length > 0) {
-                updateSingleEvent(theater_data._embedded.events[0], popularEventsContainer);
-            }
-
-        } catch (error) {
-            console.error('Error fetching popular events:', error);
         }
+
+        const concerts_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?keyword=Concert&apikey=${apiKey}`);
+        const concerts_data = await concerts_response.json();
+
+        if (concerts_data._embedded && concerts_data._embedded.events.length > 0) {
+            for (const event of concerts_data._embedded.events) {
+                await saveEventToDatabase(event);
+                updateSingleEvent(event, popularEventsContainer);
+            }
+        }
+
+        const theater_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?keyword=Theater&countryCode=US&apikey=${apiKey}`);
+        const theater_data = await theater_response.json();
+
+        if (theater_data._embedded && theater_data._embedded.events.length > 0) {
+            for (const event of theater_data._embedded.events) {
+                await saveEventToDatabase(event);
+                updateSingleEvent(event, popularEventsContainer);
+            }
+        }
+
+    } catch (error) {
+        console.error('Error fetching popular events:', error);
     }
+}
+
+// Save the event to your database via an API endpoint
+async function saveEventToDatabase(event) {
+    try {
+        const payload = {
+            eventId: event.id, // External ID from Ticketmaster
+            eventName: event.name || 'Unnamed Event',
+            description: event.info || '',
+            eventDate: event.dates.start.localDate || new Date().toISOString(),
+            location: event._embedded?.venues?.[0]?.name || 'Unknown Location',
+            category: event.classifications?.[0]?.segment?.name || 'General',
+            images: event.images?.map(img => ({
+                url: img.url,
+                width: img.width,
+                height: img.height
+            })),
+            isPublic: true
+        };
+
+        const response = await fetch('/Event/SaveEvent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            console.log(`Event ${event.id} saved successfully.`);
+        } else if (response.status === 409) {
+            console.log(`Event ${event.id} already exists.`);
+        } else {
+            console.error(`Failed to save event ${event.id}: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error(`Error saving event ${event.id}:`, error);
+    }
+}
+
+
 
 
     // Fetch local events based on the zip code (one sporting event, one concert, one theater event)

@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Senior_Project.Data;
 
 #nullable disable
 
-namespace Senior_Project.Migrations.New_
+namespace Senior_Project.Migrations.NewContext2Migrations
 {
-    [DbContext(typeof(New_Context))]
-    partial class New_ContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(NewContext2))]
+    [Migration("20241121045353_AnotherContext")]
+    partial class AnotherContext
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

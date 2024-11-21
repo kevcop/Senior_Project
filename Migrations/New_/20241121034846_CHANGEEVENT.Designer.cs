@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Senior_Project.Data;
 
@@ -11,9 +12,11 @@ using Senior_Project.Data;
 namespace Senior_Project.Migrations.New_
 {
     [DbContext(typeof(New_Context))]
-    partial class New_ContextModelSnapshot : ModelSnapshot
+    [Migration("20241121034846_CHANGEEVENT")]
+    partial class CHANGEEVENT
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

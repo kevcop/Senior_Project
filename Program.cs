@@ -7,8 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Register your DbContexts
 builder.Services.AddDbContext<New_Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("New_Context") ?? throw new InvalidOperationException("Connection string 'New_Context' not found.")));
-builder.Services.AddDbContext<Context_file2>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Context_file2") ?? throw new InvalidOperationException("Connection string 'Context_file2' not found.")));
+builder.Services.AddDbContext<NewContext2>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("NewContext2") ?? throw new InvalidOperationException("Connection string 'Context_file2' not found.")));
 
 // Add services to the container
 builder.Services.AddControllersWithViews();

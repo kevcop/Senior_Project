@@ -10,9 +10,9 @@ namespace Senior_Project.Controllers
 {
     public class EventCreationController : Controller
     {
-        private readonly New_Context _context;
+        private readonly NewContext2 _context;
 
-        public EventCreationController(New_Context context)
+        public EventCreationController(NewContext2 context)
         {
             _context = context;
         }

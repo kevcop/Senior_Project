@@ -16,11 +16,11 @@ namespace Senior_Project.Controllers
 {
     public class Login:Controller
     {
-        private readonly New_Context _context;
+        private readonly NewContext2 _context;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ILogger<Login> _logger;
         private readonly ISession _session;
-        public Login(New_Context context,ILogger<Login> logger, IHttpContextAccessor httpContextAccessor ) { _context = context;
+        public Login(NewContext2 context,ILogger<Login> logger, IHttpContextAccessor httpContextAccessor ) { _context = context;
             _logger = logger;
             _session = httpContextAccessor.HttpContext.Session;
                     }
@@ -54,35 +54,73 @@ namespace Senior_Project.Controllers
 
 
         public IActionResult Register() { return  View(); }
+        //CHECK THIS 
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register([Bind("Id,firstName,lastName,emailAddress,phoneNumber,birthdate,username,password")] Register register)
         {
-            //TO CHECK, DOUBLE MATCHES WHERE EMAIL AND PASSWORD BOTH MATCH AN ENTRY, NEED TO ACCOUNT FOR THIS 
+            // Debugging: Log the input register object
+            System.Diagnostics.Debug.WriteLine($"Debug: Input - Username: {register.username}, Email: {register.emailAddress}");
+
+            // Check if a user with the same username or email already exists
             var user = _context.Register.SingleOrDefault(u => u.username == register.username || u.emailAddress == register.emailAddress);
-            
-            System.Diagnostics.Debug.WriteLine("Here it is " + user);
-            if(user != null)
+
+            // Debugging: Log if a duplicate user is found
+            if (user != null)
             {
+                System.Diagnostics.Debug.WriteLine($"Debug: User already exists - Username: {user.username}, Email: {user.emailAddress}");
                 ModelState.AddModelError(string.Empty, "User already exists!");
                 return View("~/Views/Login/Testing.cshtml");
             }
 
-            System.Diagnostics.Debug.WriteLine("Here it is");
-            System.Diagnostics.Debug.WriteLine(ModelState);
-            var errors = ModelState.Values.SelectMany(v => v.Errors);
-            System.Diagnostics.Debug.WriteLine("Here it is pt2");
-            System.Diagnostics.Debug.WriteLine(errors);
-            if (ModelState.IsValid)
+            // Debugging: Log model state
+            System.Diagnostics.Debug.WriteLine("Debug: ModelState validation:");
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                System.Diagnostics.Debug.WriteLine($"Debug: ModelState is invalid. Errors: {string.Join(", ", errors)}");
+                return View("~/Views/Login/Testing.cshtml");
+            }
+
+            // Add user to the database and save changes
+            try
             {
                 _context.Add(register);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View("~/Views/Login/Testing.cshtml");
 
+                // Debugging: Log the newly registered user's ID
+                System.Diagnostics.Debug.WriteLine($"Debug: New user registered successfully with ID: {register.Id}");
+
+                // Create a default profile for the new user
+                var profile = new Profile
+                {
+                    UserId = register.Id, // Use the newly created user's ID
+                    Bio = "Welcome to your profile!", // Default bio
+                    Interests = string.Empty, // Empty interests initially
+                    AttendingEvents = new List<int>(), // Empty event lists
+                    PastEvents = new List<int>() // Empty event lists
+                };
+
+                // Debugging: Log profile creation attempt
+                System.Diagnostics.Debug.WriteLine($"Debug: Creating profile for UserId: {profile.UserId}");
+
+                _context.Profiles.Add(profile);
+                await _context.SaveChangesAsync();
+
+                // Debugging: Confirm profile creation
+                System.Diagnostics.Debug.WriteLine($"Debug: Profile created successfully for UserId: {profile.UserId}");
+            }
+            catch (Exception ex)
+            {
+                // Debugging: Log any exception during the save process
+                System.Diagnostics.Debug.WriteLine($"Error during registration or profile creation: {ex.Message}");
+                return StatusCode(500, "An error occurred during registration.");
+            }
+
+            return RedirectToAction(nameof(Index)); // Redirect to the main page or login
         }
+
 
 
 
