@@ -1,14 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Senior_Project.Models;
 using Senior_Project.Data;
+using Microsoft.Extensions.DependencyInjection;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Register your DbContexts
-builder.Services.AddDbContext<New_Context>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("New_Context") ?? throw new InvalidOperationException("Connection string 'New_Context' not found.")));
 builder.Services.AddDbContext<NewContext2>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("NewContext2") ?? throw new InvalidOperationException("Connection string 'Context_file2' not found.")));
+
 
 // Add services to the container
 builder.Services.AddControllersWithViews();
@@ -23,21 +24,14 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Seed the database
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
 
-    try
-    {
-        var context = services.GetRequiredService<New_Context>();
-        DataSeeder.Seed(context); // Call your seeding logic
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"An error occurred while seeding the database: {ex.Message}");
-    }
+    SeedData.Initialize(services);
 }
+
+// Seed the database
 
 // Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())

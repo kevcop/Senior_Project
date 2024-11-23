@@ -2,10 +2,10 @@
 
 #nullable disable
 
-namespace Senior_Project.Migrations.New_
+namespace Senior_Project.Migrations.NewContext2Migrations
 {
     /// <inheritdoc />
-    public partial class AddEventsTableInfo : Migration
+    public partial class PCTRANSFER : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -27,6 +27,7 @@ namespace Senior_Project.Controllers
             {
                 return Json(new List<object>()); // Return empty result if query is null/empty
             }
+            System.Diagnostics.Debug.WriteLine("Here is the query: "+query);
 
             var events = _context.Events
                 .Where(e => e.EventName.Contains(query) || e.Category.Contains(query)) // Search by name or category

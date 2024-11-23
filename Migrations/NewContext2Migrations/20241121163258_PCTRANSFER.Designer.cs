@@ -9,11 +9,11 @@ using Senior_Project.Data;
 
 #nullable disable
 
-namespace Senior_Project.Migrations.New_
+namespace Senior_Project.Migrations.NewContext2Migrations
 {
-    [DbContext(typeof(New_Context))]
-    [Migration("20241116200207_AddProfiles")]
-    partial class AddProfiles
+    [DbContext(typeof(NewContext2))]
+    [Migration("20241121163258_PCTRANSFER")]
+    partial class PCTRANSFER
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,6 +54,10 @@ namespace Senior_Project.Migrations.New_
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("ExternalEventID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsPublic")
                         .HasColumnType("bit");
 
@@ -65,20 +69,10 @@ namespace Senior_Project.Migrations.New_
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<int?>("ProfileId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ProfileId1")
-                        .HasColumnType("int");
-
                     b.Property<int>("UserID")
                         .HasColumnType("int");
 
                     b.HasKey("EventID");
-
-                    b.HasIndex("ProfileId");
-
-                    b.HasIndex("ProfileId1");
 
                     b.HasIndex("UserID");
 
@@ -122,6 +116,10 @@ namespace Senior_Project.Migrations.New_
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.PrimitiveCollection<string>("AttendingEvents")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Bio")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -131,6 +129,10 @@ namespace Senior_Project.Migrations.New_
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.PrimitiveCollection<string>("PastEvents")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -193,14 +195,6 @@ namespace Senior_Project.Migrations.New_
 
             modelBuilder.Entity("Senior_Project.Models.Event", b =>
                 {
-                    b.HasOne("Senior_Project.Models.Profile", null)
-                        .WithMany("AttendingEvents")
-                        .HasForeignKey("ProfileId");
-
-                    b.HasOne("Senior_Project.Models.Profile", null)
-                        .WithMany("PastEvents")
-                        .HasForeignKey("ProfileId1");
-
                     b.HasOne("Senior_Project.Models.Register", "User")
                         .WithMany()
                         .HasForeignKey("UserID")
@@ -235,13 +229,6 @@ namespace Senior_Project.Migrations.New_
             modelBuilder.Entity("Senior_Project.Models.Event", b =>
                 {
                     b.Navigation("Images");
-                });
-
-            modelBuilder.Entity("Senior_Project.Models.Profile", b =>
-                {
-                    b.Navigation("AttendingEvents");
-
-                    b.Navigation("PastEvents");
                 });
 #pragma warning restore 612, 618
         }
