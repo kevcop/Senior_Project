@@ -2,7 +2,7 @@
 
 <h2>Create Event</h2>
 
-<form asp-action="Create" method="post">
+<form asp-action="Create" method="post" enctype="multipart/form-data">
     <div>
         <label asp-for="EventName"></label>
         <input asp-for="EventName" />
@@ -39,5 +39,44 @@
         <span asp-validation-for="IsPublic" class="text-danger"></span>
     </div>
 
+    <div>
+        <label for="files">Upload Event Images</label>
+        <input id="files" name="files" type="file" multiple accept=".jpg, .jpeg, .png, .gif" />
+        <span class="text-muted">Accepted formats: .jpg, .jpeg, .png, .gif. Max size: 5 MB per file.</span>
+    </div>
+
+    <!-- Preview Images Section -->
+    <div id="image-preview-container">
+        <h4>Image Previews:</h4>
+        <div id="image-previews" style="display: flex; gap: 10px;"></div>
+    </div>
+
     <button type="submit">Create Event</button>
 </form>
+
+@section Scripts {
+    <script>
+        document.getElementById('files').addEventListener('change', function (event) {
+            const previewContainer = document.getElementById('image-previews');
+            previewContainer.innerHTML = ''; // Clear any existing previews
+
+            const files = event.target.files;
+            for (const file of files) {
+                if (['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.style.width = '100px';
+                        img.style.height = '100px';
+                        img.style.objectFit = 'cover';
+                        previewContainer.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert(`Invalid file type: ${file.name}`);
+                }
+            }
+        });
+    </script>
+}

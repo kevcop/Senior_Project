@@ -97,7 +97,7 @@ namespace Senior_Project.Controllers
                         var eventImage = new EventImage
                         {
                             EventId = newEvent.EventID,
-                            ImageByte = imageData,
+                            //ImageByte = imageData,
                             ContentType = "image/jpeg",
                             Added = DateTime.Now
                         };

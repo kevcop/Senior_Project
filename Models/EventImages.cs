@@ -14,10 +14,9 @@ namespace Senior_Project.Models
         [ForeignKey("Event")]
         public int EventId { get; set; }
         public virtual Event Event { get; set; }
-        public byte[] ImageByte { get; set; }
-        public string ContentType { get; set; }
-        public DateTime Added { get; set; }   
 
-    
+        public string FilePath { get; set; } // Store relative file path here
+        public string ContentType { get; set; }
+        public DateTime Added { get; set; }
     }
 }
