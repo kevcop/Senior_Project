@@ -7,16 +7,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Senior_Project.Controllers
 {
     public class EventController : Controller
     {
         private readonly NewContext2 _context;
+        private readonly IHttpContextAccessor _contextAccessor;
+        private readonly ILogger<EventController> _logger;
 
-        public EventController(NewContext2 context)
+        public EventController(NewContext2 context, IHttpContextAccessor contextAccessor, ILogger<EventController> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _contextAccessor = contextAccessor ?? throw new ArgumentNullException(nameof(contextAccessor));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         // API to search for events based on a query
@@ -27,7 +33,7 @@ namespace Senior_Project.Controllers
             {
                 return Json(new List<object>()); // Return empty result if query is null/empty
             }
-            System.Diagnostics.Debug.WriteLine("Here is the query: "+query);
+            _logger.LogInformation($"Search query received: {query}");
 
             var events = _context.Events
                 .Where(e => e.EventName.Contains(query) || e.Category.Contains(query)) // Search by name or category
@@ -52,11 +58,21 @@ namespace Senior_Project.Controllers
             {
                 if (eventDto == null)
                 {
-                    Console.WriteLine("Received null EventDto");
+                    _logger.LogWarning("Received null EventDto.");
                     return BadRequest("Event data is required.");
                 }
 
-                Console.WriteLine($"Saving Event: {eventDto.EventName}, ExternalID: {eventDto.EventId}");
+                _logger.LogInformation($"Saving Event: {eventDto.EventName}, ExternalID: {eventDto.EventId}");
+
+                // Retrieve UserID from the session
+                var userId = _contextAccessor.HttpContext.Session.GetInt32("UserId");
+                if (userId == null)
+                {
+                    _logger.LogWarning("Session does not contain a valid UserId.");
+                    return Unauthorized("User session is not valid. Please log in.");
+                }
+
+                _logger.LogInformation($"Retrieved UserId from session: {userId}");
 
                 // Convert EventId to string for comparison
                 var externalEventId = eventDto.EventId.ToString();
@@ -65,7 +81,7 @@ namespace Senior_Project.Controllers
                 var existingEvent = _context.Events.FirstOrDefault(e => e.ExternalEventID == externalEventId);
                 if (existingEvent != null)
                 {
-                    Console.WriteLine($"Event already exists: {externalEventId}");
+                    _logger.LogInformation($"Event already exists: {externalEventId}");
                     return Conflict("Event already exists.");
                 }
 
@@ -80,15 +96,16 @@ namespace Senior_Project.Controllers
                     Category = eventDto.Category,
                     IsPublic = eventDto.IsPublic,
                     CreatedDate = DateTime.Now,
-                    IsUserCreated = false // External events are not user-created
+                    IsUserCreated = false, // External events are not user-created
+                    UserID = userId.Value // Associate the event with the current user
                 };
 
-                Console.WriteLine("Adding new event to the database...");
+                _logger.LogInformation("Adding new event to the database...");
                 _context.Events.Add(newEvent);
                 await _context.SaveChangesAsync();
 
                 // Save images for the event
-                Console.WriteLine($"Saving {eventDto.Images.Count} images for event ID: {eventDto.EventId}");
+                _logger.LogInformation($"Saving {eventDto.Images.Count} images for event ID: {eventDto.EventId}");
                 foreach (var imageDto in eventDto.Images)
                 {
                     var imageData = await DownloadImageAsByteArray(imageDto.Url);
@@ -97,7 +114,6 @@ namespace Senior_Project.Controllers
                         var eventImage = new EventImage
                         {
                             EventId = newEvent.EventID,
-                            //ImageByte = imageData,
                             ContentType = "image/jpeg",
                             Added = DateTime.Now
                         };
@@ -105,22 +121,20 @@ namespace Senior_Project.Controllers
                     }
                     else
                     {
-                        Console.WriteLine($"Failed to download image for URL: {imageDto.Url}");
+                        _logger.LogWarning($"Failed to download image for URL: {imageDto.Url}");
                     }
                 }
 
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"Event {eventDto.EventId} saved successfully.");
+                _logger.LogInformation($"Event {eventDto.EventId} saved successfully.");
                 return Ok();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving event: {ex.Message}");
+                _logger.LogError($"Error saving event: {ex.Message}", ex);
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-
-
 
         // Helper method to download image as byte array
         private async Task<byte[]> DownloadImageAsByteArray(string imageUrl)
@@ -134,7 +148,7 @@ namespace Senior_Project.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error downloading image from {imageUrl}: {ex.Message}");
+                _logger.LogError($"Error downloading image from {imageUrl}: {ex.Message}", ex);
                 return null;
             }
         }

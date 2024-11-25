@@ -35,7 +35,7 @@
                     foreach (var image in ViewBag.AttendingEventImages)
                     {
                         <div class="event-item">
-                            <img src="data:@image.ContentType;base64,@Convert.ToBase64String(image.ImageByte)" alt="Event Image" class="event-image" />
+                            <img src="@image.FilePath" alt="Event Image" class="event-image" />
                         </div>
                     }
                 }
@@ -60,7 +60,7 @@
                     foreach (var image in ViewBag.PastEventImages)
                     {
                         <div class="event-item">
-                            <img src="data:@image.ContentType;base64,@Convert.ToBase64String(image.ImageByte)" alt="Past Event Image" class="event-image" />
+                            <img src="@image.FilePath" alt="Event Image" class="event-image" />
                         </div>
                     }
                 }

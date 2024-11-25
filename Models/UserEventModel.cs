@@ -1,9 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.CompilerServices;
-using Microsoft.EntityFrameworkCore;
-using System.Web;
 
 namespace Senior_Project.Models
 {
@@ -17,7 +15,7 @@ namespace Senior_Project.Models
         public int UserID { get; set; }
 
         // Navigation property for accessing the user who created the event
-        public virtual Register User { get; set; }
+        public virtual Register ?User { get; set; }
 
         [Required]
         [MaxLength(100)]
@@ -39,13 +37,12 @@ namespace Senior_Project.Models
 
         public bool IsPublic { get; set; } = true;
 
-        public bool IsUserCreated { get; set; } = false; // True for user-created events, false for popular events
+        public bool IsUserCreated { get; set; } = false;
 
-        public virtual ICollection<EventImage> Images { get; set; }
+        // Navigation property for associated images
+        public virtual ICollection<EventImage> Images { get; set; } = new List<EventImage>();
 
-        public string ExternalEventID { get; set; }
-
-
-
+        // Optional field for external events
+        public string ?ExternalEventID { get; set; }
     }
 }
