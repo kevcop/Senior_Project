@@ -27,8 +27,14 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-
-    SeedData.Initialize(services);
+    try
+    {
+        await SeedData.Initialize(services); // Await if the method is asynchronous
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred seeding the DB: {ex.Message}");
+    }
 }
 
 // Seed the database

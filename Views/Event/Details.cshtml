@@ -1,0 +1,28 @@
+﻿@model Senior_Project.Models.Event
+
+@{
+    ViewData["Title"] = Model.EventName;
+}
+
+<div>
+    <h1>@Model.EventName</h1>
+    <p><strong>Date:</strong> @Model.EventDate.ToString("MMMM dd, yyyy")</p>
+    <p><strong>Location:</strong> @Model.Location</p>
+    <p><strong>Category:</strong> @Model.Category</p>
+    <p><strong>Description:</strong> @Model.Description</p>
+
+    <h2>Images</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        @if (Model.Images != null && Model.Images.Any())
+        {
+            foreach (var image in Model.Images)
+            {
+                <img src="@Url.Content(image.FilePath)" alt="@Model.EventName" style="max-width: 200px; max-height: 150px;">
+            }
+        }
+        else
+        {
+            <p>No images available for this event.</p>
+        }
+    </div>
+</div>

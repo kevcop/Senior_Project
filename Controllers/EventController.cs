@@ -152,6 +152,25 @@ namespace Senior_Project.Controllers
                 return null;
             }
         }
+
+        [HttpGet("/Events/Details/{id}")]
+        public IActionResult Details(int id)
+        {
+            // Fetch the event by ID, including associated images
+            var eventDetails = _context.Events
+                .Include(e => e.Images) // Ensure related images are included
+                .FirstOrDefault(e => e.EventID == id);
+
+            if (eventDetails == null)
+            {
+                return NotFound($"Event with ID {id} not found.");
+            }
+
+            // Return the Event object to the view
+            return View(eventDetails);
+        }
+
+
     }
 
     // Data Transfer Object for receiving event data

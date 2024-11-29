@@ -9,11 +9,26 @@
     <a class href="/profile">Profile</a>
          
     <div style="float: right;">
-        <input type="text" placeholder="Search...">
-        <button type="button">Search</button>
-    </div>
+    <input id="searchQuery" type="text" placeholder="Search for users or events...">
+    <button type="button" onclick="search()">Search</button>
 </div>
 
+</div>
+<div id="searchResults" style="margin-top: 20px; display: none;">
+    <h2>Search Results</h2>
+
+    <!-- User Results -->
+    <div id="userResults" style="margin-bottom: 20px; display: none;">
+        <h3>Users</h3>
+        <ul id="userResultsList"></ul>
+    </div>
+
+    <!-- Event Results -->
+    <div id="eventResults" style="display: none;">
+        <h3>Events</h3>
+        <ul id="eventResultsList"></ul>
+    </div>
+</div>
 <h1 class="text-center">Landing page</h1                                          
 <section id="popular-events">
     <h2 class="text-center">Popular Upcoming Events</h2>
@@ -49,6 +64,7 @@
     <h2 style="margin-bottom: 10px;">Host Your Own Event</h2>
     <button type="button" class="button" style="margin-top: 0;" onclick="window.location.href='/EventCreation/Create'">Create an Event</button>
 </section>
+
 
 
 
@@ -340,5 +356,90 @@ async function saveEventToDatabase(event) {
     // Fetch events on page load
     window.onload = function () {
         fetchPopularEvents();
-    };
+    }
+
+     // User search functionality
+async function search() {
+    const query = document.getElementById("searchQuery").value.trim();
+    if (!query) {
+        alert("Please enter a search term.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`/Landing/SearchUsers?query=${encodeURIComponent(query)}`);
+        const data = await response.json();
+
+        console.log("API Response:", data); // Log API response
+
+        // Clear previous results
+        const userResults = document.getElementById("userResults");
+        const userResultsList = document.getElementById("userResultsList");
+        const eventResults = document.getElementById("eventResults");
+        const eventResultsList = document.getElementById("eventResultsList");
+        userResults.style.display = "none";
+        userResultsList.innerHTML = "";
+        eventResults.style.display = "none";
+        eventResultsList.innerHTML = "";
+
+        // Handle message (e.g., no results found)
+        if (data.message) {
+            alert(data.message);
+            return;
+        }
+
+        // Display user results if any
+        if (data.users && data.users.length > 0) {
+            userResults.style.display = "block";
+            data.users.forEach(user => {
+                const listItem = document.createElement("li");
+                listItem.innerHTML = `
+                    <strong>${user.username}</strong> - ${user.firstName} ${user.lastName}
+                    <a href="${user.profileLink}" class="button">View Profile</a>
+                `;
+                userResultsList.appendChild(listItem);
+            });
+        }
+
+        // Display event results if any
+        if (data.events && data.events.length > 0) {
+            eventResults.style.display = "block";
+            data.events.forEach(event => {
+                const listItem = document.createElement("li");
+
+                // Generate image display HTML
+                let imagesHtml = "";
+                if (event.images && event.images.length > 0) {
+                    imagesHtml = event.images
+                        .map(
+                            img => `<img src="${img.filePath}" alt="Event Image" style="max-width: 100px; max-height: 100px; margin-right: 10px;">`
+                        )
+                        .join("");
+                }
+
+                listItem.innerHTML = `
+                    <div style="display: flex; align-items: center;">
+                        ${imagesHtml}
+                        <div>
+                            <strong>${event.eventName}</strong> - ${event.location}
+                            <p>Date: ${event.eventDate}</p>
+                            <a href="${event.detailsLink}" class="button">View Details</a>
+                        </div>
+                    </div>
+                `;
+                eventResultsList.appendChild(listItem);
+            });
+        }
+
+        // Show search results container
+        document.getElementById("searchResults").style.display = "block";
+
+    } catch (error) {
+        console.error("Error fetching search results:", error);
+        alert("An error occurred while searching. Please try again later.");
+    }
+}
+
+
+
 </script>

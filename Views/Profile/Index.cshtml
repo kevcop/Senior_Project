@@ -27,6 +27,7 @@
     <section class="profile-section">
         <h2>Attending Events</h2>
         <button class="btn btn-primary" onclick="openEventSearchModal('attending')">Search and Add Events</button>
+        <button class="btn btn-danger" onclick="clearAttendingEvents()">Clear Attending Events</button>
         <div class="carousel-container">
             <a class="prev" onclick="prevSlideAttending()">&#10094;</a>
             <div class="event-slides" id="attending-events-container">
@@ -52,6 +53,7 @@
     <section class="profile-section">
         <h2>Past Events</h2>
         <button class="btn btn-primary" onclick="openEventSearchModal('past')">Search and Add Events</button>
+        <button class="btn btn-danger" onclick="clearPastEvents()">Clear Past Events</button>
         <div class="carousel-container">
             <a class="prev" onclick="prevSlidePast()">&#10094;</a>
             <div class="event-slides" id="past-events-container">
@@ -60,7 +62,7 @@
                     foreach (var image in ViewBag.PastEventImages)
                     {
                         <div class="event-item">
-                            <img src="@image.FilePath" alt="Event Image" class="event-image" />
+                            <img src="@image.FilePath" alt="Past Event Image" class="event-image" />
                         </div>
                     }
                 }
@@ -92,28 +94,15 @@
 <script>
     let attendingIndex = 0;
     let pastIndex = 0;
-    let currentSelectionType = ""; // Tracks whether user is selecting for attending or past events
-    let selectedEvents = { attending: [], past: [] }; // Stores selected events
+    let selectedEvents = { attending: [], past: [] };
 
-    // Attending Events Carousel
-    function prevSlideAttending() {
-        changeSlide(attendingIndex--, "attending-events-container");
-    }
+    // Initialize carousels on page load
+    document.addEventListener("DOMContentLoaded", () => {
+        initializeSlides("attending-events-container");
+        initializeSlides("past-events-container");
+    });
 
-    function nextSlideAttending() {
-        changeSlide(attendingIndex++, "attending-events-container");
-    }
-
-    // Past Events Carousel
-    function prevSlidePast() {
-        changeSlide(pastIndex--, "past-events-container");
-    }
-
-    function nextSlidePast() {
-        changeSlide(pastIndex++, "past-events-container");
-    }
-
-    function changeSlide(index, containerId) {
+    function initializeSlides(containerId) {
         const container = document.getElementById(containerId);
         const slides = container.getElementsByClassName("event-item");
         if (slides.length === 0) return;
@@ -121,27 +110,96 @@
         for (let i = 0; i < slides.length; i++) {
             slides[i].style.display = "none";
         }
+        slides[0].style.display = "block";
+    }
+
+    // Carousel functions
+    function prevSlideAttending() {
+        attendingIndex--;
+        changeSlide(attendingIndex, "attending-events-container");
+    }
+
+    function nextSlideAttending() {
+        attendingIndex++;
+        changeSlide(attendingIndex, "attending-events-container");
+    }
+
+    function prevSlidePast() {
+        pastIndex--;
+        changeSlide(pastIndex, "past-events-container");
+    }
+
+    function nextSlidePast() {
+        pastIndex++;
+        changeSlide(pastIndex, "past-events-container");
+    }
+
+    function changeSlide(index, containerId) {
+        const container = document.getElementById(containerId);
+        const slides = container.getElementsByClassName("event-item");
+        if (slides.length === 0) return;
 
         if (index >= slides.length) index = 0;
         if (index < 0) index = slides.length - 1;
 
+        for (let i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+        }
         slides[index].style.display = "block";
     }
 
-    // Open the event search modal
+    // Clear attending events
+    async function clearAttendingEvents() {
+        try {
+            const response = await fetch('/Profile/ClearSelections', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'attending' }),
+            });
+
+            if (response.ok) {
+                alert("Attending events cleared!");
+                location.reload();
+            } else {
+                alert("Failed to clear attending events.");
+            }
+        } catch (error) {
+            console.error("Error clearing attending events:", error);
+        }
+    }
+
+    // Clear past events
+    async function clearPastEvents() {
+        try {
+            const response = await fetch('/Profile/ClearSelections', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'past' }),
+            });
+
+            if (response.ok) {
+                alert("Past events cleared!");
+                location.reload();
+            } else {
+                alert("Failed to clear past events.");
+            }
+        } catch (error) {
+            console.error("Error clearing past events:", error);
+        }
+    }
+
+    // Event search modal and saving logic
     function openEventSearchModal(type) {
         currentSelectionType = type;
         document.getElementById("eventSearchModal").style.display = "block";
     }
 
-    // Close the event search modal
     function closeEventSearchModal() {
         document.getElementById("eventSearchModal").style.display = "none";
         document.getElementById("searchInput").value = "";
         document.getElementById("search-results").innerHTML = "";
     }
 
-    // Perform a search query
     async function searchEvents() {
         const query = document.getElementById("searchInput").value;
         if (query.trim() === "") {
@@ -152,19 +210,15 @@
         try {
             const response = await fetch(`/Event/Search?query=${query}`);
             const results = await response.json();
-
-            console.log(results); // Log the response for debugging
-
             const resultsDiv = document.getElementById("search-results");
             resultsDiv.innerHTML = "";
 
             results.forEach(event => {
                 const div = document.createElement("div");
-                // Correctly referencing eventName (case-sensitive)
                 div.innerHTML = `
-                    <p>${event.eventName || "Unnamed Event"}</p>
-                    <button onclick="addEventToSelection(${event.eventID}, '${event.eventName || "Unnamed Event"}')">Add</button>
-                `;
+                        <p>${event.eventName || "Unnamed Event"}</p>
+                        <button onclick="addEventToSelection(${event.eventID}, '${event.eventName || "Unnamed Event"}')">Add</button>
+                    `;
                 resultsDiv.appendChild(div);
             });
         } catch (error) {
@@ -172,8 +226,6 @@
         }
     }
 
-
-    // Add an event to the user's selection
     function addEventToSelection(eventID, eventName) {
         if (!selectedEvents[currentSelectionType].some(event => event.id === eventID)) {
             selectedEvents[currentSelectionType].push({ id: eventID, name: eventName });
@@ -181,7 +233,6 @@
         }
     }
 
-    // Update selected events list
     function updateSelectedEventsList() {
         const list = document.getElementById("selected-events-list");
         list.innerHTML = selectedEvents[currentSelectionType]
@@ -189,14 +240,11 @@
             .join("");
     }
 
-    // Remove an event from the user's selection
     function removeEventFromSelection(eventID) {
         selectedEvents[currentSelectionType] = selectedEvents[currentSelectionType].filter(event => event.id !== eventID);
         updateSelectedEventsList();
     }
 
-    // Save selected events
-    // Save selected events
     async function saveSelectionsToProfile() {
         try {
             const payload = {};
@@ -211,7 +259,7 @@
             if (response.ok) {
                 alert("Events saved successfully!");
                 closeEventSearchModal();
-                location.reload(); // Reload to show updated events in the carousel
+                location.reload();
             } else {
                 const errorText = await response.text();
                 console.error("Error saving events:", errorText);
@@ -222,5 +270,4 @@
             alert("An unexpected error occurred. Please try again.");
         }
     }
-
 </script>

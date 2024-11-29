@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Senior_Project.Data;
 
@@ -11,9 +12,11 @@ using Senior_Project.Data;
 namespace Senior_Project.Migrations.NewContext2Migrations
 {
     [DbContext(typeof(NewContext2))]
-    partial class NewContext2ModelSnapshot : ModelSnapshot
+    [Migration("20241128230933_Removing")]
+    partial class Removing
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -102,40 +105,6 @@ namespace Senior_Project.Migrations.NewContext2Migrations
                     b.HasIndex("EventId");
 
                     b.ToTable("Images");
-                });
-
-            modelBuilder.Entity("Senior_Project.Models.Message", b =>
-                {
-                    b.Property<int>("MessageID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MessageID"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("ReceiverID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SenderID")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("MessageID");
-
-                    b.HasIndex("ReceiverID");
-
-                    b.HasIndex("SenderID");
-
-                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("Senior_Project.Models.Profile", b =>
@@ -243,25 +212,6 @@ namespace Senior_Project.Migrations.NewContext2Migrations
                         .IsRequired();
 
                     b.Navigation("Event");
-                });
-
-            modelBuilder.Entity("Senior_Project.Models.Message", b =>
-                {
-                    b.HasOne("Senior_Project.Models.Register", "Receiver")
-                        .WithMany()
-                        .HasForeignKey("ReceiverID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Senior_Project.Models.Register", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Receiver");
-
-                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("Senior_Project.Models.Profile", b =>

@@ -1,0 +1,244 @@
+﻿@model Senior_Project.Models.Profile
+
+@{
+    ViewData["Title"] = $"{Model.User.username}'s Profile";
+}
+
+<head>
+    <link href="~/css/styles.css" rel="stylesheet" type="text/css" />
+</head>
+
+<div class="profile-container">
+    <h1 class="text-center">@Model.User.username's Profile</h1>
+
+    <!-- Chat Button -->
+    <div class="chat-button-container">
+        <button class="chat-button" onclick="openChatModal(@Model.User.Id, '@Model.User.username')">Chat</button>
+    </div>
+
+    <!-- User Bio -->
+    <section class="profile-section">
+        <h2>Bio</h2>
+        <p>@Model.Bio</p>
+    </section>
+
+    <!-- User Interests -->
+    <section class="profile-section">
+        <h2>Interests</h2>
+        <p>@Model.Interests</p>
+    </section>
+
+    <!-- Attending Events -->
+    <section class="profile-section">
+        <h2>Attending Events</h2>
+        @if (ViewBag.AttendingEventImages != null && ViewBag.AttendingEventImages.Count > 0)
+        {
+            <div class="event-images">
+                @foreach (var image in ViewBag.AttendingEventImages)
+                {
+                    <img src="@image.FilePath" alt="Event Image" class="event-image" />
+                }
+            </div>
+        }
+        else
+        {
+            <p>No events currently being attended.</p>
+        }
+    </section>
+
+    <!-- Past Events -->
+    <section class="profile-section">
+        <h2>Past Events</h2>
+        @if (ViewBag.PastEventImages != null && ViewBag.PastEventImages.Count > 0)
+        {
+            <div class="event-images">
+                @foreach (var image in ViewBag.PastEventImages)
+                {
+                    <img src="@image.FilePath" alt="Event Image" class="event-image" />
+                }
+            </div>
+        }
+        else
+        {
+            <p>No past events found.</p>
+        }
+    </section>
+</div>
+
+<!-- Chat Modal -->
+<div id="chatModal" class="chat-modal">
+    <div class="chat-modal-content">
+        <span class="close" onclick="closeChatModal()">&times;</span>
+        <h2>Chat with <span id="chatReceiverName"></span></h2>
+        <div id="chatMessages" class="chat-messages">
+            <!-- Messages will be dynamically loaded here -->
+        </div>
+        <form id="chatForm" onsubmit="sendMessage(event)">
+            <input type="hidden" id="receiverId">
+            <textarea id="chatInput" placeholder="Type your message here..." required></textarea>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Modal Styles */
+    .chat-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .chat-modal-content {
+        background-color: #f9f9f9;
+        margin: 10% auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        width: 50%;
+        position: relative;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .chat-messages {
+        max-height: 300px;
+        overflow-y: scroll;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        padding: 10px;
+        background: #fff;
+    }
+
+    #chatInput {
+        width: calc(100% - 100px);
+        padding: 10px;
+        margin-right: 10px;
+    }
+
+    #chatForm button {
+        padding: 10px 20px;
+    }
+</style>
+
+<script>
+    // Open the chat modal
+    function openChatModal(receiverId, receiverName) {
+        console.log(`Attempting to open chat with Receiver ID: ${receiverId}, Receiver Name: ${receiverName}`);
+
+        try {
+            document.getElementById('chatReceiverName').innerText = receiverName;
+            document.getElementById('receiverId').value = receiverId;
+            document.getElementById('chatModal').style.display = 'block';
+
+            console.log("Chat modal opened successfully.");
+
+            // Load conversation
+            fetchMessages(receiverId);
+        } catch (error) {
+            console.error("Error opening chat modal:", error);
+        }
+    }
+
+    // Close the chat modal
+    function closeChatModal() {
+        console.log("Closing chat modal...");
+        try {
+            document.getElementById('chatModal').style.display = 'none';
+            document.getElementById('chatMessages').innerHTML = '';
+            console.log("Chat modal closed.");
+        } catch (error) {
+            console.error("Error closing chat modal:", error);
+        }
+    }
+
+    // Fetch messages
+    function fetchMessages(receiverId) {
+        const userId = '@ViewBag.CurrentUserId'; // Safely include Razor variable as a string
+        console.log(`Fetching messages for Receiver ID: ${receiverId}, Current User ID: ${userId}`);
+
+        fetch(`/Messages/GetConversation?userId=${userId}&otherUserId=${receiverId}`)
+            .then(response => {
+                console.log("Fetch response received:", response);
+                if (!response.ok) throw new Error(`Failed to fetch messages: ${response.statusText}`);
+                return response.json();
+            })
+            .then(messages => {
+                console.log("Messages retrieved:", messages);
+
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML = '';
+
+                messages.forEach(msg => {
+                    const messageElement = document.createElement('div');
+                    messageElement.className = msg.senderID == userId ? 'sent-message' : 'received-message';
+                    messageElement.innerText = msg.content;
+                    chatMessages.appendChild(messageElement);
+                });
+
+                console.log("Messages displayed in the chat modal.");
+            })
+            .catch(error => {
+                console.error("Error fetching messages:", error);
+                alert("Could not load messages. Please try again later.");
+            });
+    }
+
+    // Send message
+    function sendMessage(event) {
+        event.preventDefault();
+
+        const receiverId = document.getElementById('receiverId').value;
+        const content = document.getElementById('chatInput').value.trim();
+        const senderId = '@ViewBag.CurrentUserId'; // Ensure this is properly rendered
+
+        console.log(`Payload being sent: SenderID=${senderId}, ReceiverID=${receiverId}, Content="${content}"`);
+
+        if (!senderId || senderId === '') {
+            console.error("Sender ID is missing. Please ensure the user is logged in.");
+            alert("Unable to send message. You must be logged in.");
+            return;
+        }
+
+        fetch('/Messages/Send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                senderId: parseInt(senderId), // Ensure valid integer
+                receiverId: parseInt(receiverId), // Ensure valid integer
+                content: content,
+            }),
+        })
+            .then(response => {
+                console.log("Send message response:", response);
+                if (!response.ok) throw new Error(`Failed to send message: ${response.statusText}`);
+                return response.json();
+            })
+            .then(() => {
+                console.log("Message sent successfully.");
+                fetchMessages(receiverId); // Refresh chat messages
+                document.getElementById('chatInput').value = ''; // Clear input field
+            })
+            .catch(error => {
+                console.error("Error sending message:", error);
+                alert("Failed to send message. Please try again.");
+            });
+    }
+
+
+</script>
+

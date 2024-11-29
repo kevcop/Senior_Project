@@ -71,25 +71,13 @@ namespace Senior_Project.Controllers
         {
             try
             {
-                // Check if selections parameter is null
-                if (selections == null)
-                {
-                    _logger.LogWarning("UpdateSelections called with a null selections parameter.");
-                    return BadRequest("Selections parameter cannot be null.");
-                }
-
-                System.Diagnostics.Debug.WriteLine($"Debug: Received selections: {Newtonsoft.Json.JsonConvert.SerializeObject(selections)}");
-
-                // Retrieve the user ID from the session
                 var userId = HttpContext.Session.GetInt32("UserId");
                 if (userId == null)
                 {
                     _logger.LogWarning("Session does not contain a valid UserId.");
                     return Unauthorized();
                 }
-                System.Diagnostics.Debug.WriteLine($"Debug: Retrieved UserId from session: {userId}");
 
-                // Retrieve the user's profile
                 var profile = _context.Profiles.FirstOrDefault(p => p.UserId == userId);
                 if (profile == null)
                 {
@@ -107,30 +95,25 @@ namespace Senior_Project.Controllers
                     _context.SaveChanges();
                 }
 
-                // Update Attending and Past Events
                 if (selections.ContainsKey("attending"))
                 {
-                    profile.AttendingEvents = selections["attending"];
-                }
-                else
-                {
-                    _logger.LogWarning("No 'attending' events provided in the update request.");
+                    profile.AttendingEvents = profile.AttendingEvents
+                        .Union(selections["attending"])
+                        .Distinct()
+                        .ToList();
                 }
 
                 if (selections.ContainsKey("past"))
                 {
-                    profile.PastEvents = selections["past"];
-                }
-                else
-                {
-                    _logger.LogWarning("No 'past' events provided in the update request.");
+                    profile.PastEvents = profile.PastEvents
+                        .Union(selections["past"])
+                        .Distinct()
+                        .ToList();
                 }
 
-                // Persist changes
                 _context.Profiles.Update(profile);
                 _context.SaveChanges();
 
-                _logger.LogInformation($"Successfully updated profile selections for UserId: {userId}");
                 return Ok();
             }
             catch (Exception ex)
@@ -139,6 +122,102 @@ namespace Senior_Project.Controllers
                 return StatusCode(500, "An internal error occurred. Please try again later.");
             }
         }
+
+
+        [HttpPost]
+        public IActionResult ClearSelections([FromBody] Dictionary<string, string> request)
+        {
+            try
+            {
+                var userId = HttpContext.Session.GetInt32("UserId");
+                if (userId == null)
+                {
+                    return Unauthorized("User session is not valid.");
+                }
+
+                var profile = _context.Profiles.FirstOrDefault(p => p.UserId == userId);
+                if (profile == null)
+                {
+                    return NotFound("User profile not found.");
+                }
+
+                if (request["type"] == "attending")
+                {
+                    profile.AttendingEvents.Clear();
+                }
+                else if (request["type"] == "past")
+                {
+                    profile.PastEvents.Clear();
+                }
+
+                _context.Profiles.Update(profile);
+                _context.SaveChanges();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpGet]
+        public IActionResult ViewByUsername(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                return BadRequest("Username is required.");
+            }
+
+            // Fetch the user (Register) by username
+            var user = _context.Register.FirstOrDefault(u => u.username == username);
+            if (user == null)
+            {
+                return NotFound($"No user found with username '{username}'.");
+            }
+
+            // Fetch the profile using the user's ID
+            var profile = _context.Profiles
+                .Include(p => p.User) // Include navigation property for access to Register data
+                .FirstOrDefault(p => p.UserId == user.Id);
+
+            if (profile == null)
+            {
+                // If no profile exists, create a default profile
+                _logger.LogWarning($"Profile not found for UserId: {user.Id}. Creating a new profile.");
+                profile = new Profile
+                {
+                    UserId = user.Id,
+                    Bio = "Default bio",
+                    Interests = "Default interests",
+                    AttendingEvents = new List<int>(),
+                    PastEvents = new List<int>()
+                };
+
+                _context.Profiles.Add(profile);
+                _context.SaveChanges();
+            }
+
+            // Retrieve images for attending and past events
+            var attendingEventImages = _context.Images
+                .Where(img => profile.AttendingEvents.Contains(img.EventId))
+                .ToList();
+
+            var pastEventImages = _context.Images
+                .Where(img => profile.PastEvents.Contains(img.EventId))
+                .ToList();
+
+            // Add event images and current user ID to ViewBag
+            ViewBag.AttendingEventImages = attendingEventImages;
+            ViewBag.PastEventImages = pastEventImages;
+            ViewBag.CurrentUserId = HttpContext.Session.GetInt32("UserId"); // Pass the current user's ID
+
+            // Pass the profile to the view
+            return View("ViewByUsername", profile);
+        }
+
+
+
 
 
 
