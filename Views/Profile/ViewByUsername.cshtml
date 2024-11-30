@@ -66,20 +66,24 @@
 </div>
 
 <!-- Chat Modal -->
+<!-- Chat Modal -->
 <div id="chatModal" class="chat-modal">
     <div class="chat-modal-content">
         <span class="close" onclick="closeChatModal()">&times;</span>
         <h2>Chat with <span id="chatReceiverName"></span></h2>
+        <input type="hidden" id="chatId">
+        <input type="hidden" id="receiverId"> <!-- Ensure this input is present -->
         <div id="chatMessages" class="chat-messages">
             <!-- Messages will be dynamically loaded here -->
         </div>
         <form id="chatForm" onsubmit="sendMessage(event)">
-            <input type="hidden" id="receiverId">
             <textarea id="chatInput" placeholder="Type your message here..." required></textarea>
             <button type="submit">Send</button>
         </form>
     </div>
 </div>
+
+
 
 <style>
     /* Modal Styles */
@@ -134,23 +138,95 @@
 </style>
 
 <script>
+
+    const currentUserId = @ViewBag.CurrentUserId; // Ensure this is set in your controller
+    const currentUserUsername = '@ViewBag.CurrentUserUsername';
+
+
     // Open the chat modal
     function openChatModal(receiverId, receiverName) {
         console.log(`Attempting to open chat with Receiver ID: ${receiverId}, Receiver Name: ${receiverName}`);
 
         try {
-            document.getElementById('chatReceiverName').innerText = receiverName;
-            document.getElementById('receiverId').value = receiverId;
-            document.getElementById('chatModal').style.display = 'block';
+            console.log("Validating currentUserId...");
+            if (typeof currentUserId === 'undefined' || currentUserId === null || currentUserId === '') {
+                console.error("currentUserId is not defined or invalid. Ensure the user is logged in and currentUserId is set.");
+                alert("Failed to open chat. Current user ID is not set. Please log in or refresh the page.");
+                return;
+            }
+            console.log(`Current User ID validated: ${currentUserId}`);
 
-            console.log("Chat modal opened successfully.");
+            // Debugging the API call
+            console.log("Calling GetOrCreateChat API...");
+            fetch(`/Messages/GetOrCreateChat?userId1=${currentUserId}&userId2=${receiverId}`)
+                .then(response => {
+                    console.log(`GetOrCreateChat API response status: ${response.status}`);
+                    if (!response.ok) {
+                        console.error(`GetOrCreateChat API returned an error: ${response.statusText}`);
+                        throw new Error(`Failed to fetch or create chat: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(chat => {
+                    console.log("Processing chat object returned from API...");
+                    if (!chat || !chat.chatID) {
+                        console.error("Chat object returned from API is invalid or missing chatID.");
+                        alert("Failed to create or fetch chat. Please try again.");
+                        return;
+                    }
+                    console.log(`Chat fetched/created successfully: Chat ID=${chat.chatID}`);
 
-            // Load conversation
-            fetchMessages(receiverId);
+                    // Set the receiver's name in the modal
+                    const chatReceiverNameElement = document.getElementById('chatReceiverName');
+                    if (!chatReceiverNameElement) {
+                        console.error("Receiver name element is missing in the modal.");
+                        return;
+                    }
+                    chatReceiverNameElement.innerText = receiverName;
+
+                    // Set the Chat ID in the hidden input field
+                    const chatIdField = document.getElementById('chatId');
+                    if (!chatIdField) {
+                        console.error("Chat ID input field is missing in the modal.");
+                        return;
+                    }
+                    chatIdField.value = chat.chatID;
+
+                    // Ensure the receiver ID field exists and set it
+                    const receiverIdField = document.getElementById('receiverId');
+                    if (!receiverIdField) {
+                        console.error("Receiver ID input field is missing in the modal.");
+                        return;
+                    }
+                    receiverIdField.value = receiverId;
+
+                    // Show the chat modal
+                    const chatModal = document.getElementById('chatModal');
+                    if (!chatModal) {
+                        console.error("Chat modal element is missing.");
+                        return;
+                    }
+                    chatModal.style.display = 'block';
+
+                    console.log("Chat modal attributes set and opened successfully.");
+                    console.log(`Chat modal attributes: Chat ID=${chat.chatID}, Receiver Name=${receiverName}`);
+
+                    // Load conversation
+                    console.log("Fetching messages for the chat...");
+                    fetchMessages(chat.chatID);
+                })
+                .catch(error => {
+                    console.error("Error fetching or creating chat:", error);
+                    alert("Failed to open chat. Please try again.");
+                });
         } catch (error) {
             console.error("Error opening chat modal:", error);
         }
     }
+
+
+
+
 
     // Close the chat modal
     function closeChatModal() {
@@ -165,26 +241,46 @@
     }
 
     // Fetch messages
-    function fetchMessages(receiverId) {
-        const userId = '@ViewBag.CurrentUserId'; // Safely include Razor variable as a string
-        console.log(`Fetching messages for Receiver ID: ${receiverId}, Current User ID: ${userId}`);
+    // Fetch messages
+    // Fetch messages
+    function fetchMessages(chatId) {
+        console.log(`Fetching messages for Chat ID: ${chatId}`);
 
-        fetch(`/Messages/GetConversation?userId=${userId}&otherUserId=${receiverId}`)
+        fetch(`/Messages/GetMessages?chatId=${chatId}`)
             .then(response => {
                 console.log("Fetch response received:", response);
-                if (!response.ok) throw new Error(`Failed to fetch messages: ${response.statusText}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch messages: ${response.statusText}`);
+                }
                 return response.json();
             })
-            .then(messages => {
-                console.log("Messages retrieved:", messages);
+            .then(data => {
+                // Debugging output
+                console.log("Messages retrieved:", data);
+
+                // Check if messages is an array
+                const messages = Array.isArray(data) ? data : data.messages;
+
+                if (!Array.isArray(messages)) {
+                    console.error("Invalid messages format:", messages);
+                    alert("Failed to load messages. Please try again.");
+                    return;
+                }
 
                 const chatMessages = document.getElementById('chatMessages');
-                chatMessages.innerHTML = '';
+                chatMessages.innerHTML = ''; // Clear old messages
 
                 messages.forEach(msg => {
                     const messageElement = document.createElement('div');
-                    messageElement.className = msg.senderID == userId ? 'sent-message' : 'received-message';
-                    messageElement.innerText = msg.content;
+
+                    // Extract sender name from the message
+                    const senderName = msg.senderName || "Unknown"; // Use "Unknown" if senderName is undefined
+                    const messageContent = msg.content || ""; // Use an empty string if content is missing
+
+                    // Add appropriate styling for sent or received messages
+                    messageElement.className = msg.senderID === currentUserId ? 'sent-message' : 'received-message';
+                    messageElement.innerText = `${senderName}: ${messageContent}`;
+
                     chatMessages.appendChild(messageElement);
                 });
 
@@ -192,36 +288,60 @@
             })
             .catch(error => {
                 console.error("Error fetching messages:", error);
-                alert("Could not load messages. Please try again later.");
+                alert("Failed to load messages. Please try again.");
             });
     }
+
+
+
+
 
     // Send message
     function sendMessage(event) {
         event.preventDefault();
 
-        const receiverId = document.getElementById('receiverId').value;
-        const content = document.getElementById('chatInput').value.trim();
+        // Extract values from the DOM
+        const chatIdElement = document.getElementById('chatId');
+        const receiverIdElement = document.getElementById('receiverId');
+        const contentElement = document.getElementById('chatInput');
+
+        const chatId = chatIdElement ? chatIdElement.value : null;
+        const receiverId = receiverIdElement ? receiverIdElement.value : null;
+        const content = contentElement ? contentElement.value.trim() : '';
         const senderId = '@ViewBag.CurrentUserId'; // Ensure this is properly rendered
 
-        console.log(`Payload being sent: SenderID=${senderId}, ReceiverID=${receiverId}, Content="${content}"`);
+        // Log all the extracted values
+        console.log(`Attempting to send message with the following details:`);
+        console.log(`ChatID: ${chatId}`);
+        console.log(`SenderID: ${senderId}`);
+        console.log(`ReceiverID: ${receiverId}`);
+        console.log(`Content: "${content}"`);
 
-        if (!senderId || senderId === '') {
-            console.error("Sender ID is missing. Please ensure the user is logged in.");
-            alert("Unable to send message. You must be logged in.");
+        // Validate the extracted values
+        if (!chatId || chatId === '' || !senderId || senderId === '' || !receiverId || receiverId === '' || !content) {
+            console.error("Missing required fields. Please ensure all fields are populated.");
+            alert("Unable to send message. Please ensure all fields are populated.");
             return;
         }
 
+        // Prepare the payload
+        const payload = {
+            chatId: parseInt(chatId), // Ensure valid integer
+            senderId: parseInt(senderId), // Ensure valid integer
+            receiverId: parseInt(receiverId), // Ensure valid integer
+            content: content,
+        };
+
+        // Log the payload before sending
+        console.log("Payload being sent to the server:", payload);
+
+        // Send the message using Fetch API
         fetch('/Messages/Send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                senderId: parseInt(senderId), // Ensure valid integer
-                receiverId: parseInt(receiverId), // Ensure valid integer
-                content: content,
-            }),
+            body: JSON.stringify(payload),
         })
             .then(response => {
                 console.log("Send message response:", response);
@@ -230,7 +350,7 @@
             })
             .then(() => {
                 console.log("Message sent successfully.");
-                fetchMessages(receiverId); // Refresh chat messages
+                fetchMessages(chatId); // Refresh chat messages
                 document.getElementById('chatInput').value = ''; // Clear input field
             })
             .catch(error => {
@@ -239,6 +359,6 @@
             });
     }
 
-
 </script>
+
 

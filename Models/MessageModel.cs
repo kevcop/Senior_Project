@@ -9,21 +9,18 @@ namespace Senior_Project.Models
         [Key]
         public int MessageID { get; set; } // Primary Key
 
+        [ForeignKey("Chat")]
+        public int ChatID { get; set; } // Foreign Key linking to Chat
+        public virtual Chat Chat { get; set; } // Navigation property for the chat
+
         [ForeignKey("Sender")]
-        public int SenderID { get; set; }
+        public int SenderID { get; set; } // Foreign Key linking to the user who sent the message
         public virtual Register Sender { get; set; } // Navigation property for the sender user
 
-        [ForeignKey("Receiver")]
-        public int ReceiverID { get; set; }
-        public virtual Register Receiver { get; set; } // Navigation property for the receiver user
-
         [Required]
-        [MaxLength(1000)] // Limit message length to 1000 characters
         public string Content { get; set; } // The actual message content
 
         [Required]
         public DateTime Timestamp { get; set; } = DateTime.UtcNow; // Time when the message was sent
-
-        public bool IsRead { get; set; } = false; // Indicates if the message has been read by the receiver
     }
 }
