@@ -166,11 +166,191 @@ namespace Senior_Project.Controllers
                 return NotFound($"Event with ID {id} not found.");
             }
 
-            // Return the Event object to the view
+            ViewBag.EventId = id; // Pass EventId to the view for form action
             return View(eventDetails);
         }
 
 
+        [HttpPost("Events/CreateDiscussion/{id}")]
+        public IActionResult CreateDiscussion(int id, string Title)
+        {
+            if (string.IsNullOrWhiteSpace(Title))
+            {
+                TempData["Error"] = "Discussion title cannot be empty.";
+                return RedirectToAction("Details", new { id });
+            }
+
+            var eventExists = _context.Events.Any(e => e.EventID == id);
+            if (!eventExists)
+            {
+                TempData["Error"] = $"Event with ID {id} not found.";
+                return RedirectToAction("Details", new { id });
+            }
+
+            var discussion = new Chat
+            {
+                ChatName = Title,
+                IsGroupChat = true,
+                IsDiscussion = true,
+                EventId = id,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            _context.Chats.Add(discussion);
+            _context.SaveChanges();
+
+            TempData["Success"] = "Discussion created successfully.";
+            return RedirectToAction("Details", new { id });
+        }
+
+
+        [HttpGet("Events/Discussions/List/{eventId}")]
+        public IActionResult GetDiscussions(int eventId)
+        {
+            _logger.LogInformation($"Fetching discussions for EventID: {eventId}");
+
+            try
+            {
+                // Log the raw database query
+                var discussionsQuery = _context.Chats
+                    .Where(c => c.EventId == eventId && c.IsDiscussion);
+
+                _logger.LogInformation($"Raw Query: {discussionsQuery.ToQueryString()}");
+
+                // Execute the query and select desired fields
+                var discussions = discussionsQuery
+                    .Select(c => new
+                    {
+                        c.ChatID,
+                        c.ChatName,
+                        c.CreatedDate
+                    })
+                    .ToList();
+
+                // Log the results
+                if (!discussions.Any())
+                {
+                    _logger.LogInformation($"No discussions found for EventID: {eventId}");
+                    return Ok(new List<object>()); // Return empty list instead of 404
+                }
+
+                _logger.LogInformation($"Retrieved {discussions.Count} discussions for EventID: {eventId}");
+                foreach (var discussion in discussions)
+                {
+                    _logger.LogInformation($"Discussion: ID={discussion.ChatID}, Name={discussion.ChatName}, Created={discussion.CreatedDate}");
+                }
+
+                return Ok(discussions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error fetching discussions for EventID: {eventId}. Exception: {ex.Message}");
+                return StatusCode(500, "An error occurred while fetching discussions.");
+            }
+        }
+
+
+
+        [HttpGet("Events/Discussions/View/{chatID}")]
+        public IActionResult ViewDiscussion(int chatID)
+        {
+            _logger.LogInformation($"Entering ViewDiscussion. Received ID: {chatID}");
+
+            if (chatID <= 0)
+            {
+                _logger.LogWarning("Invalid discussion ID received. ID must be greater than 0.");
+                return BadRequest("Invalid discussion ID.");
+            }
+
+            var discussionExists = _context.Chats.Any(c => c.ChatID == chatID && c.IsDiscussion);
+            if (!discussionExists)
+            {
+                _logger.LogWarning($"Discussion with ID {chatID} not found.");
+                return NotFound($"Discussion with ID {chatID} not found.");
+            }
+
+            _logger.LogInformation($"Discussion with ID {chatID} found. Redirecting to ViewDiscussion.cshtml.");
+            return View("ViewDiscussion", chatID); // Pass discussion ID to the view
+        }
+
+
+
+
+        [HttpGet("/Events/Discussions/Messages/{discussionId}")]
+        public IActionResult GetMessages(int discussionId)
+        {
+            var messages = _context.Messages
+                .Where(m => m.ChatID == discussionId)
+                .Select(m => new
+                {
+                    m.MessageID,
+                    m.Content,
+                    m.Timestamp,
+                    SenderName = m.Sender.username
+                })
+                .OrderBy(m => m.Timestamp)
+                .ToList();
+
+            if (!messages.Any())
+            {
+                return NotFound("No messages found for this discussion.");
+            }
+
+            return Ok(messages);
+        }
+
+        [HttpPost("/Events/Discussions/SendMessage")]
+        public IActionResult SendMessage([FromBody] MessageDto messageDto)
+        {
+            _logger.LogInformation($"Received send message request: {System.Text.Json.JsonSerializer.Serialize(messageDto)}");
+
+            if (string.IsNullOrWhiteSpace(messageDto.Content))
+            {
+                return BadRequest("Message content cannot be empty.");
+            }
+
+            if (messageDto.DiscussionId <= 0)
+            {
+                _logger.LogWarning("Invalid discussion ID.");
+                return BadRequest("Invalid discussion ID.");
+            }
+
+            var discussionExists = _context.Chats.Any(c => c.ChatID == messageDto.DiscussionId);
+            if (!discussionExists)
+            {
+                _logger.LogWarning($"Discussion with ID {messageDto.DiscussionId} not found.");
+                return NotFound($"Discussion with ID {messageDto.DiscussionId} not found.");
+            }
+
+            var message = new Message
+            {
+                ChatID = messageDto.DiscussionId, // Map ChatID from MessageDto
+                SenderID = messageDto.SenderId,
+                Content = messageDto.Content,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _context.Messages.Add(message);
+            _context.SaveChanges();
+
+            _logger.LogInformation($"Message sent successfully with ID {message.MessageID}");
+            return Ok(new { message.MessageID });
+        }
+
+
+
+
+    }
+
+    public class CreateDiscussionRequest
+    {
+        public string Title { get; set; }
+    }
+
+    public class JoinDiscussionRequest
+    {
+        public int ChatId { get; set; }
+        public int UserId { get; set; }
     }
 
     // Data Transfer Object for receiving event data
@@ -191,5 +371,12 @@ namespace Senior_Project.Controllers
         public string Url { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
+    }
+
+    public class MessageDto
+    {
+        public int DiscussionId { get; set; }
+        public int SenderId { get; set; }
+        public string Content { get; set; }
     }
 }

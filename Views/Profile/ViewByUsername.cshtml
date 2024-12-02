@@ -6,6 +6,8 @@
 
 <head>
     <link href="~/css/styles.css" rel="stylesheet" type="text/css" />
+    <script src="~/js/signalr/dist/browser/signalr.min.js"></script>
+
 </head>
 
 <div class="profile-container">
@@ -142,6 +144,34 @@
     const currentUserId = @ViewBag.CurrentUserId; // Ensure this is set in your controller
     const currentUserUsername = '@ViewBag.CurrentUserUsername';
 
+    // Initialize SignalR connection
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/userMessaging")
+        .build();
+
+    // Event handler for receiving real-time messages
+    connection.on("ReceiveMessage", (chatId, senderName, content) => {
+        console.log(`New message received: ChatID=${chatId}, Sender=${senderName}, Content=${content}`);
+
+        // Display the new message in the chat window
+        const chatMessages = document.getElementById('chatMessages');
+        const messageElement = document.createElement('div');
+        messageElement.className = senderName === currentUserUsername ? 'sent-message' : 'received-message';
+        messageElement.innerText = `${senderName}: ${content}`;
+        chatMessages.appendChild(messageElement);
+
+        // Automatically scroll to the latest message
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    // Start the connection
+    connection.start()
+        .then(() => console.log("SignalR connected successfully!"))
+        .catch(err => console.error("Error connecting to SignalR:", err));
+
+
+
+
 
     // Open the chat modal
     function openChatModal(receiverId, receiverName) {
@@ -156,7 +186,6 @@
             }
             console.log(`Current User ID validated: ${currentUserId}`);
 
-            // Debugging the API call
             console.log("Calling GetOrCreateChat API...");
             fetch(`/Messages/GetOrCreateChat?userId1=${currentUserId}&userId2=${receiverId}`)
                 .then(response => {
@@ -214,6 +243,29 @@
                     // Load conversation
                     console.log("Fetching messages for the chat...");
                     fetchMessages(chat.chatID);
+                    console.log("Here is the chatid");
+                    console.log(chat.chatID);
+
+                    // **Override ChatID for Hardcoded Test**
+                    const testChatId = chat.chatID.toString(); // Hardcoded testChatId
+                    console.log(`Overriding ChatID with hardcoded value: ${testChatId}`);
+
+                    // **Check connection state before starting**
+                    if (connection.state === "Disconnected") {
+                        console.log("SignalR connection is in 'Disconnected' state. Starting connection...");
+                        connection.start()
+                            .then(() => {
+                                console.log("SignalR connection established. Joining SignalR group...");
+                                return connection.invoke("JoinGroup", testChatId); // Use hardcoded ChatID
+                            })
+                            .then(() => console.log(`Successfully joined SignalR group for ChatID=${testChatId}`))
+                            .catch(err => console.error("Error joining SignalR group:", err));
+                    } else {
+                        console.log("SignalR connection is already active. Joining SignalR group...");
+                        connection.invoke("JoinGroup", testChatId) // Use hardcoded ChatID
+                            .then(() => console.log(`Successfully joined SignalR group for ChatID=${testChatId}`))
+                            .catch(err => console.error("Error joining SignalR group:", err));
+                    }
                 })
                 .catch(error => {
                     console.error("Error fetching or creating chat:", error);
@@ -223,6 +275,10 @@
             console.error("Error opening chat modal:", error);
         }
     }
+
+
+
+
 
 
 
@@ -352,12 +408,18 @@
                 console.log("Message sent successfully.");
                 fetchMessages(chatId); // Refresh chat messages
                 document.getElementById('chatInput').value = ''; // Clear input field
+
+                // **Broadcast the message using SignalR**
+                connection.invoke("SendMessage", chatId, currentUserUsername, content)
+                    .then(() => console.log("Message broadcasted via SignalR."))
+                    .catch(err => console.error("Error broadcasting message via SignalR:", err));
             })
             .catch(error => {
                 console.error("Error sending message:", error);
                 alert("Failed to send message. Please try again.");
             });
     }
+
 
 </script>
 

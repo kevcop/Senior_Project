@@ -1,0 +1,115 @@
+﻿@model int
+<div>
+    <h1>Discussion Messages</h1>
+    <div id="messages">
+        <!-- Messages will be loaded dynamically -->
+    </div>
+    <hr />
+    <form id="sendMessageForm">
+        <textarea id="messageContent" rows="4" placeholder="Enter your message..."></textarea>
+        <button type="submit">Send</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // Set the discussionId from the model
+        const discussionId = @Model;
+
+        async function loadMessages() {
+            try {
+                const response = await fetch(`/Events/Discussions/Messages/${discussionId}`);
+                const messagesDiv = document.getElementById("messages");
+
+                if (response.ok) {
+                    const messages = await response.json();
+                    messagesDiv.innerHTML = "";
+
+                    messages.forEach(message => {
+                        const formattedDate = new Date(message.Timestamp).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        });
+
+                        const messageElement = document.createElement("div");
+                        messageElement.classList.add("message");
+
+                        messageElement.innerHTML = `
+                                    <p><strong>${message.SenderName}</strong> <span class="timestamp">(${formattedDate})</span>:</p>
+                                    <p>${message.Content}</p>
+                                    <hr />
+                                `;
+
+                        messagesDiv.appendChild(messageElement);
+                    });
+                } else {
+                    messagesDiv.innerHTML = "<p>No messages found.</p>";
+                }
+            } catch (error) {
+                console.error("Error loading messages:", error);
+                document.getElementById("messages").innerHTML = "<p>Error loading messages. Please try again later.</p>";
+            }
+        }
+
+        async function sendMessage(event) {
+            event.preventDefault();
+
+            const messageContent = document.getElementById("messageContent").value;
+
+            if (!messageContent.trim()) {
+                alert("Message content cannot be empty.");
+                return;
+            }
+
+            const payload = {
+                discussionId: discussionId, // Ensure this is the ChatID from the backend
+                senderId: 1, // Replace with the actual logged-in user ID
+                content: messageContent
+            };
+
+            console.log("Attempting to send message with the following data:", payload);
+
+            const response = await fetch(`/Events/Discussions/SendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                document.getElementById("messageContent").value = "";
+                loadMessages(); // Reload messages to show the new one
+            } else {
+                const errorMessage = await response.text();
+                console.error("Failed to send message. Server response:", errorMessage);
+                alert("Failed to send message: " + errorMessage);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadMessages();
+            document.getElementById("sendMessageForm").addEventListener("submit", sendMessage);
+        });
+    </script>
+}
+
+<style>
+    .message {
+        margin-bottom: 15px;
+    }
+
+    .timestamp {
+        font-size: 0.9em;
+        color: gray;
+    }
+
+    #messages {
+        border: 1px solid #ddd;
+        padding: 15px;
+        max-height: 400px;
+        overflow-y: auto;
+        background-color: #f9f9f9;
+    }
+</style>

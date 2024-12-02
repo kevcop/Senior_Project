@@ -2,9 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Senior_Project.Models;
 using Senior_Project.Data;
 using Microsoft.Extensions.DependencyInjection;
+using Senior_Project.SignalR;
 
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSignalR();
 
 // Register your DbContexts
 builder.Services.AddDbContext<NewContext2>(options =>
@@ -56,5 +58,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<UserMessaging>("/userMessaging");
 
 app.Run();

@@ -25,4 +25,71 @@
             <p>No images available for this event.</p>
         }
     </div>
+
+    <hr />
+
+    <!-- Create Discussion Section -->
+    <div>
+        <h2>Discussions</h2>
+        <form method="post" action="/Events/CreateDiscussion/@Model.EventID">
+            <div>
+                <label for="discussionTitle">Discussion Title</label>
+                <input type="text" id="discussionTitle" name="Title" required />
+            </div>
+            <button type="submit">Create a Discussion</button>
+        </form>
+    </div>
+
+    <!-- List of Active Discussions -->
+    <div id="activeDiscussions">
+        <h3>Active Discussions</h3>
+        <ul id="discussionList">
+            <!-- Discussions will be loaded dynamically -->
+        </ul>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        const eventId = @Model.EventID;
+
+        // Load discussions for this event
+        // Load discussions for this event
+        async function loadDiscussions() {
+            try {
+                const response = await fetch(`/Events/Discussions/List/${eventId}`);
+                const discussionList = document.getElementById("discussionList");
+
+                if (response.ok) {
+                    const discussions = await response.json();
+                    console.log("Discussions fetched:", discussions);
+
+                    discussionList.innerHTML = "";
+
+                    discussions.forEach(discussion => {
+                        const listItem = document.createElement("li");
+                        listItem.innerHTML = `
+                            <a href="/Events/Discussions/View/${discussion.chatID}">
+                                ${discussion.chatName} (Created: ${new Date(discussion.createdDate).toLocaleDateString()})
+                            </a>`;
+                        discussionList.appendChild(listItem);
+                    });
+
+                } else {
+                    console.error("Error fetching discussions:", response.statusText);
+                    discussionList.innerHTML = "<li>No active discussions found for this event.</li>";
+                }
+            } catch (error) {
+                console.error("Error loading discussions:", error);
+                document.getElementById("discussionList").innerHTML = "<li>Error loading discussions. Please try again later.</li>";
+            }
+        }
+
+
+
+
+        // Load discussions on page load
+        document.addEventListener("DOMContentLoaded", loadDiscussions);
+    </script>
+
+}

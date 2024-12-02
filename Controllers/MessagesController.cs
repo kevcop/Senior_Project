@@ -4,6 +4,8 @@ using Senior_Project.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Linq;
+using Microsoft.AspNetCore.SignalR;
+using Senior_Project.SignalR;
 
 namespace Senior_Project.Controllers
 {
@@ -11,16 +13,19 @@ namespace Senior_Project.Controllers
     {
         private readonly NewContext2 _context;
         private readonly ILogger<MessagesController> _logger;
+        private readonly IHubContext<UserMessaging> _hubContext;
 
-        public MessagesController(NewContext2 context, ILogger<MessagesController> logger)
+        public MessagesController(NewContext2 context, ILogger<MessagesController> logger, IHubContext<UserMessaging> hubContext)
         {
             _context = context;
             _logger = logger;
+            _hubContext = hubContext;
         }
+
 
         // POST: Send a message
         [HttpPost("/Messages/Send")]
-        public IActionResult SendMessage([FromBody] SendMessageRequest request)
+        public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
         {
             _logger.LogInformation($"Received SendMessage request: ChatID={request.ChatId}, SenderID={request.SenderId}, Content={request.Content}");
 
@@ -63,6 +68,11 @@ namespace Senior_Project.Controllers
                 _context.SaveChanges();
 
                 _logger.LogInformation("Message saved successfully.");
+
+                // **Broadcast the message via SignalR**
+                await _hubContext.Clients.Group(request.ChatId.ToString())
+                    .SendAsync("ReceiveMessage", request.ChatId, "SenderName", request.Content);
+
                 return Ok(new { message.MessageID, message.ChatID, message.Content, message.Timestamp });
             }
             catch (Exception ex)
@@ -71,6 +81,7 @@ namespace Senior_Project.Controllers
                 return StatusCode(500, "An error occurred while saving the message.");
             }
         }
+
 
         // GET: Fetch all messages for a chat
         [HttpGet("/Messages/GetMessages")]
@@ -138,10 +149,10 @@ namespace Senior_Project.Controllers
                         ChatName = chatName,
                         CreatedDate = DateTime.UtcNow,
                         Participants = new List<ChatParticipant>
-                        {
-                            new ChatParticipant { UserID = userId1 },
-                            new ChatParticipant { UserID = userId2 }
-                        }
+                {
+                    new ChatParticipant { UserID = userId1 },
+                    new ChatParticipant { UserID = userId2 }
+                }
                     };
 
                     _context.Chats.Add(chat);
@@ -153,6 +164,10 @@ namespace Senior_Project.Controllers
                 {
                     _logger.LogInformation($"Found existing chat with ID {chat.ChatID} between UserID1={userId1} and UserID2={userId2}.");
                 }
+
+                // **Notify the SignalR hub to join the group**
+                _hubContext.Clients.User(userId1.ToString()).SendAsync("JoinGroup", chat.ChatID);
+                _hubContext.Clients.User(userId2.ToString()).SendAsync("JoinGroup", chat.ChatID);
 
                 // Return a simplified response
                 var chatResponse = new
@@ -174,6 +189,7 @@ namespace Senior_Project.Controllers
                 return StatusCode(500, "An error occurred while fetching or creating the chat.");
             }
         }
+
     }
 
     public class SendMessageRequest

@@ -25,7 +25,7 @@ namespace Senior_Project.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Define relationships and constraints for Chat
+            // Chat configuration
             modelBuilder.Entity<Chat>(entity =>
             {
                 entity.HasKey(c => c.ChatID); // Primary Key
@@ -38,9 +38,14 @@ namespace Senior_Project.Data
                       .WithOne(m => m.Chat)
                       .HasForeignKey(m => m.ChatID)
                       .OnDelete(DeleteBehavior.Cascade); // Cascade delete chat and messages
+
+                entity.HasOne(c => c.Event) // One-to-one or many-to-one with Event
+                      .WithMany()
+                      .HasForeignKey(c => c.EventId)
+                      .OnDelete(DeleteBehavior.Restrict); // Prevent event deletion from cascading
             });
 
-            // Define relationships and constraints for ChatParticipant
+            // ChatParticipant configuration
             modelBuilder.Entity<ChatParticipant>(entity =>
             {
                 entity.HasKey(cp => cp.ChatParticipantID); // Primary Key
@@ -50,7 +55,7 @@ namespace Senior_Project.Data
                       .OnDelete(DeleteBehavior.Restrict); // Restrict delete of a user to prevent participant deletion
             });
 
-            // Define relationships and constraints for Message
+            // Message configuration
             modelBuilder.Entity<Message>(entity =>
             {
                 entity.HasKey(m => m.MessageID); // Primary Key
@@ -59,8 +64,7 @@ namespace Senior_Project.Data
                       .HasForeignKey(m => m.SenderID)
                       .OnDelete(DeleteBehavior.Restrict); // Restrict delete of a sender to avoid message deletion
             });
-
-            // Seed data or additional configurations if needed
         }
+
     }
 }
