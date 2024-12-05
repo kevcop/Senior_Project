@@ -53,6 +53,32 @@
     <script>
         const eventId = @Model.EventID;
 
+
+        async function joinDiscussion(chatId) {
+            console.log(`Attempting to join discussion with ChatID: ${chatId}`);
+
+            try {
+                const response = await fetch(`/Messages/JoinGroup?chatId=${chatId}`, {
+                    method: "POST",
+                });
+
+                if (!response.ok) {
+                    const errorMessage = await response.text();
+                    console.error("Error joining discussion:", errorMessage);
+                    alert("Error joining discussion: " + errorMessage);
+                } else {
+                    console.log(`Successfully joined discussion with ChatID: ${chatId}`);
+
+                    // Redirect the user to the View Discussion page
+                    window.location.href = `/Events/Discussions/View/${chatId}`;
+                }
+            } catch (error) {
+                console.error("Error joining discussion:", error);
+                alert("Failed to join discussion. Please try again later.");
+            }
+        }
+
+
         // Load discussions for this event
         // Load discussions for this event
         async function loadDiscussions() {
@@ -69,7 +95,7 @@
                     discussions.forEach(discussion => {
                         const listItem = document.createElement("li");
                         listItem.innerHTML = `
-                            <a href="/Events/Discussions/View/${discussion.chatID}">
+                            <a href="javascript:void(0);" onclick="joinDiscussion(${discussion.chatID})">
                                 ${discussion.chatName} (Created: ${new Date(discussion.createdDate).toLocaleDateString()})
                             </a>`;
                         discussionList.appendChild(listItem);

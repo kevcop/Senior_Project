@@ -156,6 +156,9 @@ namespace Senior_Project.Controllers
         [HttpGet("/Events/Details/{id}")]
         public IActionResult Details(int id)
         {
+            // Log the received ID
+            _logger.LogInformation($"Details action called with ID: {id}");
+
             // Fetch the event by ID, including associated images
             var eventDetails = _context.Events
                 .Include(e => e.Images) // Ensure related images are included
@@ -163,12 +166,14 @@ namespace Senior_Project.Controllers
 
             if (eventDetails == null)
             {
+                _logger.LogWarning($"Event with ID {id} not found.");
                 return NotFound($"Event with ID {id} not found.");
             }
 
             ViewBag.EventId = id; // Pass EventId to the view for form action
             return View(eventDetails);
         }
+
 
 
         [HttpPost("Events/CreateDiscussion/{id}")]
@@ -268,7 +273,8 @@ namespace Senior_Project.Controllers
                 _logger.LogWarning($"Discussion with ID {chatID} not found.");
                 return NotFound($"Discussion with ID {chatID} not found.");
             }
-
+            var currentUserId = _contextAccessor.HttpContext.Session.GetInt32("UserId");
+            ViewBag.CurrentUserId = currentUserId ?? 0;
             _logger.LogInformation($"Discussion with ID {chatID} found. Redirecting to ViewDiscussion.cshtml.");
             return View("ViewDiscussion", chatID); // Pass discussion ID to the view
         }
@@ -286,7 +292,9 @@ namespace Senior_Project.Controllers
                     m.MessageID,
                     m.Content,
                     m.Timestamp,
-                    SenderName = m.Sender.username
+                    SenderFirstName = m.Sender.firstName, // Assuming Sender has FirstName property
+                    SenderLastName = m.Sender.lastName,  // Assuming Sender has LastName property
+                    m.SenderID
                 })
                 .OrderBy(m => m.Timestamp)
                 .ToList();
@@ -298,6 +306,7 @@ namespace Senior_Project.Controllers
 
             return Ok(messages);
         }
+
 
         [HttpPost("/Events/Discussions/SendMessage")]
         public IActionResult SendMessage([FromBody] MessageDto messageDto)

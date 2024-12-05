@@ -356,69 +356,47 @@
     function sendMessage(event) {
         event.preventDefault();
 
-        // Extract values from the DOM
-        const chatIdElement = document.getElementById('chatId');
-        const receiverIdElement = document.getElementById('receiverId');
-        const contentElement = document.getElementById('chatInput');
+        const chatId = document.getElementById('chatId').value;
+        const content = document.getElementById('chatInput').value.trim();
 
-        const chatId = chatIdElement ? chatIdElement.value : null;
-        const receiverId = receiverIdElement ? receiverIdElement.value : null;
-        const content = contentElement ? contentElement.value.trim() : '';
-        const senderId = '@ViewBag.CurrentUserId'; // Ensure this is properly rendered
-
-        // Log all the extracted values
-        console.log(`Attempting to send message with the following details:`);
-        console.log(`ChatID: ${chatId}`);
-        console.log(`SenderID: ${senderId}`);
-        console.log(`ReceiverID: ${receiverId}`);
-        console.log(`Content: "${content}"`);
-
-        // Validate the extracted values
-        if (!chatId || chatId === '' || !senderId || senderId === '' || !receiverId || receiverId === '' || !content) {
-            console.error("Missing required fields. Please ensure all fields are populated.");
-            alert("Unable to send message. Please ensure all fields are populated.");
+        if (!content) {
+            alert("Message content cannot be empty.");
             return;
         }
 
-        // Prepare the payload
         const payload = {
-            chatId: parseInt(chatId), // Ensure valid integer
-            senderId: parseInt(senderId), // Ensure valid integer
-            receiverId: parseInt(receiverId), // Ensure valid integer
+            chatId: parseInt(chatId), // Use only ChatId and Content
             content: content,
         };
 
-        // Log the payload before sending
         console.log("Payload being sent to the server:", payload);
 
-        // Send the message using Fetch API
         fetch('/Messages/Send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'ConnectionId': connection.connectionId, // Pass SignalR's ConnectionId in the headers
             },
             body: JSON.stringify(payload),
         })
             .then(response => {
-                console.log("Send message response:", response);
-                if (!response.ok) throw new Error(`Failed to send message: ${response.statusText}`);
+                if (!response.ok) {
+                    return response.text().then(errorMessage => {
+                        throw new Error(errorMessage);
+                    });
+                }
                 return response.json();
             })
             .then(() => {
                 console.log("Message sent successfully.");
-                fetchMessages(chatId); // Refresh chat messages
                 document.getElementById('chatInput').value = ''; // Clear input field
-
-                // **Broadcast the message using SignalR**
-                connection.invoke("SendMessage", chatId, currentUserUsername, content)
-                    .then(() => console.log("Message broadcasted via SignalR."))
-                    .catch(err => console.error("Error broadcasting message via SignalR:", err));
             })
             .catch(error => {
                 console.error("Error sending message:", error);
                 alert("Failed to send message. Please try again.");
             });
     }
+
 
 
 </script>

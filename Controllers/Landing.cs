@@ -15,6 +15,8 @@ namespace Senior_Project.Controllers
 
         public IActionResult Index()
         {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            ViewBag.UserId = userId ?? 0;
             return View();
         }
 

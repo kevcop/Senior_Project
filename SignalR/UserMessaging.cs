@@ -5,6 +5,9 @@ namespace Senior_Project.SignalR
 {
     public class UserMessaging : Hub
     {
+
+        private static readonly Dictionary<string, int> ConnectionUserMap = new();
+
         // Method to send messages to all participants in a chat group
         public async Task SendMessage(string chatId, string senderName, string content)
         {
@@ -47,17 +50,49 @@ namespace Senior_Project.SignalR
         }
 
         // Optional: Override OnConnectedAsync for custom logic when a user connects
-        public override async Task OnConnectedAsync()
+        public override Task OnConnectedAsync()
         {
-            await base.OnConnectedAsync();
-            await Clients.Caller.SendAsync("Connected", Context.ConnectionId);
+            var userId = Context.GetHttpContext()?.Session.GetInt32("UserId");
+            if (userId.HasValue)
+            {
+                ConnectionUserMap[Context.ConnectionId] = userId.Value;
+                Console.WriteLine($"User {userId} connected with ConnectionId {Context.ConnectionId}.");
+            }
+            else
+            {
+                Console.WriteLine("UserId is null for the current session.");
+            }
+
+            return base.OnConnectedAsync();
         }
 
-        // Optional: Override OnDisconnectedAsync for custom logic when a user disconnects
-        public override async Task OnDisconnectedAsync(Exception? exception)
+        // On user disconnection
+        public override Task OnDisconnectedAsync(Exception? exception)
         {
-            await base.OnDisconnectedAsync(exception);
-            // You can handle cleanup here if needed
+            if (ConnectionUserMap.ContainsKey(Context.ConnectionId))
+            {
+                var userId = ConnectionUserMap[Context.ConnectionId];
+                Console.WriteLine($"User {userId} disconnected (ConnectionId {Context.ConnectionId}).");
+                ConnectionUserMap.Remove(Context.ConnectionId);
+            }
+
+            return base.OnDisconnectedAsync(exception);
         }
+
+        public static int? GetUserId(string connectionId)
+        {
+            ConnectionUserMap.TryGetValue(connectionId, out var userId);
+            return userId;
+        }
+
+        public void MapConnectionToUser(string connectionId, int userId)
+        {
+            if (!ConnectionUserMap.ContainsKey(connectionId))
+            {
+                ConnectionUserMap[connectionId] = userId;
+                Console.WriteLine($"Mapped ConnectionId {connectionId} to UserId {userId}");
+            }
+        }
+
     }
 }

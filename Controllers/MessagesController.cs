@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using System.Linq;
 using Microsoft.AspNetCore.SignalR;
 using Senior_Project.SignalR;
+using System;
 
 namespace Senior_Project.Controllers
 {
@@ -14,12 +15,14 @@ namespace Senior_Project.Controllers
         private readonly NewContext2 _context;
         private readonly ILogger<MessagesController> _logger;
         private readonly IHubContext<UserMessaging> _hubContext;
+        private readonly IHttpContextAccessor _contextAccessor;
 
-        public MessagesController(NewContext2 context, ILogger<MessagesController> logger, IHubContext<UserMessaging> hubContext)
+        public MessagesController(NewContext2 context, ILogger<MessagesController> logger, IHubContext<UserMessaging> hubContext, IHttpContextAccessor contextAccessor)
         {
             _context = context;
             _logger = logger;
             _hubContext = hubContext;
+            _contextAccessor = contextAccessor;
         }
 
 
@@ -27,60 +30,63 @@ namespace Senior_Project.Controllers
         [HttpPost("/Messages/Send")]
         public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
         {
-            _logger.LogInformation($"Received SendMessage request: ChatID={request.ChatId}, SenderID={request.SenderId}, Content={request.Content}");
+            // Fetch userId from SignalR's mapping
+            var connectionId = _contextAccessor.HttpContext.Request.Headers["ConnectionId"].ToString();
+            var userId = UserMessaging.GetUserId(connectionId); // Use the mapping from the hub
+
+            if (userId == null)
+            {
+                _logger.LogWarning("User is not authenticated or ConnectionId is missing.");
+                return Unauthorized("User is not authenticated.");
+            }
+
+            _logger.LogInformation($"User ID {userId} retrieved from ConnectionId {connectionId}.");
 
             if (string.IsNullOrWhiteSpace(request.Content))
             {
-                _logger.LogWarning("Message content is empty or null.");
                 return BadRequest("Message content cannot be empty.");
             }
 
-            if (request.ChatId <= 0 || request.SenderId <= 0)
+            if (request.ChatId <= 0)
             {
-                _logger.LogWarning($"Invalid ChatID ({request.ChatId}) or SenderID ({request.SenderId}).");
-                return BadRequest("Invalid ChatID or SenderID.");
+                return BadRequest("Invalid ChatID.");
             }
 
-            try
+            // Fetch participants for the chat
+            var participants = _context.ChatParticipants
+                .Where(cp => cp.ChatID == request.ChatId)
+                .Select(cp => cp.UserID)
+                .ToList();
+
+            _logger.LogInformation($"Participants for ChatID {request.ChatId}: {string.Join(", ", participants)}");
+
+            if (!participants.Contains(userId.Value))
             {
-                // Verify that the sender is a participant in the chat
-                var participants = _context.ChatParticipants
-                    .Where(cp => cp.ChatID == request.ChatId)
-                    .Select(cp => cp.UserID)
-                    .ToList();
-
-                if (!participants.Contains(request.SenderId))
-                {
-                    _logger.LogWarning($"User {request.SenderId} is not a participant in ChatID {request.ChatId}. Available participants: {string.Join(", ", participants)}");
-                    return BadRequest("Sender is not a participant in this chat.");
-                }
-
-                // Add the message to the chat
-                var message = new Message
-                {
-                    ChatID = request.ChatId,
-                    SenderID = request.SenderId,
-                    Content = request.Content,
-                    Timestamp = DateTime.UtcNow
-                };
-
-                _context.Messages.Add(message);
-                _context.SaveChanges();
-
-                _logger.LogInformation("Message saved successfully.");
-
-                // **Broadcast the message via SignalR**
-                await _hubContext.Clients.Group(request.ChatId.ToString())
-                    .SendAsync("ReceiveMessage", request.ChatId, "SenderName", request.Content);
-
-                return Ok(new { message.MessageID, message.ChatID, message.Content, message.Timestamp });
+                _logger.LogWarning($"Sender ID {userId} is not a participant in ChatID {request.ChatId}");
+                return BadRequest("Sender is not a participant in this chat.");
             }
-            catch (Exception ex)
+
+            // Add the message to the database
+            var message = new Message
             {
-                _logger.LogError($"Error saving message: {ex.Message}", ex);
-                return StatusCode(500, "An error occurred while saving the message.");
-            }
+                ChatID = request.ChatId,
+                SenderID = userId.Value,
+                Content = request.Content,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _context.Messages.Add(message);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Message saved successfully with ID {message.MessageID}.");
+
+            // Broadcast the message via SignalR
+            await _hubContext.Clients.Group(request.ChatId.ToString())
+                .SendAsync("ReceiveMessage", request.ChatId, userId.Value, request.Content);
+
+            return Ok(new { message.MessageID, message.ChatID, message.Content, message.Timestamp });
         }
+
 
 
         // GET: Fetch all messages for a chat
@@ -190,6 +196,93 @@ namespace Senior_Project.Controllers
             }
         }
 
+        [HttpPost("/Messages/JoinGroup")]
+        public async Task<IActionResult> JoinGroup([FromQuery] int chatId)
+        {
+            try
+            {
+                _logger.LogInformation($"Attempting to join ChatID {chatId}.");
+
+                // Verify the chat exists
+                var chatExists = _context.Chats.Any(c => c.ChatID == chatId);
+                if (!chatExists)
+                {
+                    _logger.LogWarning($"ChatID {chatId} does not exist.");
+                    return NotFound("Chat not found.");
+                }
+
+                // Retrieve the UserID from the session
+                var userId = _contextAccessor.HttpContext.Session.GetInt32("UserId");
+                if (userId == null || userId <= 0)
+                {
+                    _logger.LogWarning("User is not authenticated or UserId is missing in the session.");
+                    return Unauthorized("User is not authenticated.");
+                }
+
+                _logger.LogInformation($"UserID {userId} retrieved from session.");
+
+                // Check if the user is already a participant in the chat
+                var isAlreadyParticipant = _context.ChatParticipants
+                    .Any(cp => cp.ChatID == chatId && cp.UserID == userId);
+
+                if (!isAlreadyParticipant)
+                {
+                    _logger.LogInformation($"User {userId} is not a participant in ChatID {chatId}. Adding to ChatParticipants...");
+
+                    // Add the user to the chat participants
+                    var chatParticipant = new ChatParticipant
+                    {
+                        ChatID = chatId,
+                        UserID = userId.Value,
+                        IsAdmin = false, // Default to non-admin; adjust if needed
+                        LastReadMessageDate = DateTime.UtcNow
+                    };
+
+                    _context.ChatParticipants.Add(chatParticipant);
+
+                    try
+                    {
+                        await _context.SaveChangesAsync();
+                        _logger.LogInformation($"User {userId} successfully added to ChatParticipants for ChatID {chatId}.");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Error saving ChatParticipant: {ex.Message}");
+                        return StatusCode(500, "An error occurred while saving the ChatParticipant.");
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation($"User {userId} is already a participant in ChatID {chatId}.");
+                }
+
+                // Notify other clients in the group about the new participant
+                try
+                {
+                    await _hubContext.Clients.Group(chatId.ToString()).SendAsync("UserJoined", chatId, userId);
+                    _logger.LogInformation($"UserJoined notification sent for ChatID {chatId} and UserID {userId}.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error notifying other clients about the new participant: {ex.Message}");
+                    return StatusCode(500, "An error occurred while notifying the group.");
+                }
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Unexpected error in JoinGroup: {ex.Message}");
+                return StatusCode(500, "An unexpected error occurred while joining the group.");
+            }
+        }
+
+
+
+
+
+
+
     }
 
     public class SendMessageRequest
@@ -198,4 +291,10 @@ namespace Senior_Project.Controllers
         public int SenderId { get; set; }
         public string Content { get; set; }
     }
+
+    public class JoinGroupRequest
+    {
+        public int ChatId { get; set; } // Chat ID the user wants to join
+    }
+
 }

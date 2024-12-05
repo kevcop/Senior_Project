@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;       
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -14,16 +14,18 @@ using System.Web;
 //ADDRESS ISSUE IN REGISTER FUNCTION!!
 namespace Senior_Project.Controllers
 {
-    public class Login:Controller
+    public class Login : Controller
     {
         private readonly NewContext2 _context;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ILogger<Login> _logger;
         private readonly ISession _session;
-        public Login(NewContext2 context,ILogger<Login> logger, IHttpContextAccessor httpContextAccessor ) { _context = context;
+        public Login(NewContext2 context, ILogger<Login> logger, IHttpContextAccessor httpContextAccessor)
+        {
+            _context = context;
             _logger = logger;
             _session = httpContextAccessor.HttpContext.Session;
-                    }
+        }
 
         public IActionResult Index(Register register)
         {
@@ -53,7 +55,7 @@ namespace Senior_Project.Controllers
         }
 
 
-        public IActionResult Register() { return  View(); }
+        public IActionResult Register() { return View(); }
         //CHECK THIS 
 
         [HttpPost]
