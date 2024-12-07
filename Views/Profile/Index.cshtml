@@ -4,6 +4,9 @@
     ViewData["Title"] = "Profile";
 }
 
+<link href="~/css/StyleSheet.css" rel="stylesheet" type="text/css" />
+
+
 <head>
     <link href="~/css/styles.css" rel="stylesheet" type="text/css" />
 </head>
@@ -15,12 +18,14 @@
     <section class="profile-section">
         <h2>Bio</h2>
         <textarea asp-for="Bio" rows="4" placeholder="Tell us about yourself..." class="profile-bio"></textarea>
+        <button class="btn btn-primary" onclick="saveBio()">Save Bio</button>
     </section>
 
     <!-- User Interests -->
     <section class="profile-section">
         <h2>Interests</h2>
         <textarea asp-for="Interests" rows="4" placeholder="What are your interests?" class="profile-interests"></textarea>
+        <button class="btn btn-primary" onclick="saveInterests()">Save Interests</button>
     </section>
 
     <!-- Attending Events -->
@@ -31,12 +36,22 @@
         <div class="carousel-container">
             <a class="prev" onclick="prevSlideAttending()">&#10094;</a>
             <div class="event-slides" id="attending-events-container">
-                @if (ViewBag.AttendingEventImages != null && ViewBag.AttendingEventImages.Count > 0)
+                @if (ViewBag.AttendingEvents != null && ViewBag.AttendingEvents.Count > 0)
                 {
-                    foreach (var image in ViewBag.AttendingEventImages)
+                    foreach (var eventInfo in ViewBag.AttendingEvents)
                     {
                         <div class="event-item">
-                            <img src="@image.FilePath" alt="Event Image" class="event-image" />
+                            <!-- Wrap the image with a hyperlink -->
+                            <a href="https://localhost:7064/Events/Details/@eventInfo.Event.EventID" target="_blank">
+                                <img src="@eventInfo.FilePath" alt="@eventInfo.Event.EventName Image" class="event-image" />
+                            </a>
+
+                            <!-- Event Details -->
+                            <div class="event-details">
+                                <h3>@eventInfo.Event.EventName</h3>
+                                <p><strong>Location:</strong> @eventInfo.Event.Location</p>
+                                <p><strong>Date:</strong> @eventInfo.Event.EventDate.ToString("MMMM dd, yyyy")</p>
+                            </div>
                         </div>
                     }
                 }
@@ -45,6 +60,7 @@
                     <p>You are not attending any events yet.</p>
                 }
             </div>
+
             <a class="next" onclick="nextSlideAttending()">&#10095;</a>
         </div>
     </section>
@@ -57,12 +73,20 @@
         <div class="carousel-container">
             <a class="prev" onclick="prevSlidePast()">&#10094;</a>
             <div class="event-slides" id="past-events-container">
-                @if (ViewBag.PastEventImages != null && ViewBag.PastEventImages.Count > 0)
+                @if (ViewBag.PastEvents != null && ViewBag.PastEvents.Count > 0)
                 {
-                    foreach (var image in ViewBag.PastEventImages)
+                    foreach (var eventInfo in ViewBag.PastEvents)
                     {
                         <div class="event-item">
-                            <img src="@image.FilePath" alt="Past Event Image" class="event-image" />
+                            <!-- Display Event Image -->
+                            <img src="@eventInfo.FilePath" alt="@eventInfo.Event.EventName Image" class="event-image" />
+
+                            <!-- Display Event Details -->
+                            <div class="event-details">
+                                <h3>@eventInfo.Event.EventName</h3>
+                                <p><strong>Location:</strong> @eventInfo.Event.Location</p>
+                                <p><strong>Date:</strong> @eventInfo.Event.EventDate.ToString("MMMM dd, yyyy")</p>
+                            </div>
                         </div>
                     }
                 }
@@ -270,4 +294,71 @@
             alert("An unexpected error occurred. Please try again.");
         }
     }
+
+    async function saveBio() {
+        const bio = document.querySelector(".profile-bio").value.trim(); // Remove leading/trailing spaces
+
+        // Log the bio value for debugging
+        console.log("Bio being sent:", bio);
+
+        if (!bio) {
+            alert("Bio cannot be empty.");
+            console.error("Attempted to save an empty bio.");
+            return;
+        }
+
+        try {
+            const response = await fetch('/Profile/UpdateBio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bio),
+            });
+
+            if (response.ok) {
+                alert("Bio saved successfully!");
+            } else {
+                const errorText = await response.text();
+                console.error("Error saving bio:", errorText);
+                alert("Failed to save bio. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error saving bio:", error);
+            alert("An unexpected error occurred. Please try again.");
+        }
+    }
+
+
+    // Save Interests function
+    async function saveInterests() {
+        const interests = document.querySelector(".profile-interests").value.trim(); // Remove leading/trailing spaces
+
+        // Log the interests value for debugging
+        console.log("Interests being sent:", interests);
+
+        if (!interests) {
+            alert("Interests cannot be empty.");
+            console.error("Attempted to save empty interests.");
+            return;
+        }
+
+        try {
+            const response = await fetch('/Profile/UpdateInterests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(interests),
+            });
+
+            if (response.ok) {
+                alert("Interests saved successfully!");
+            } else {
+                const errorText = await response.text();
+                console.error("Error saving interests:", errorText);
+                alert("Failed to save interests. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error saving interests:", error);
+            alert("An unexpected error occurred. Please try again.");
+        }
+    }
+
 </script>

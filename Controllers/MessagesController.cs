@@ -65,7 +65,10 @@ namespace Senior_Project.Controllers
                 _logger.LogWarning($"Sender ID {userId} is not a participant in ChatID {request.ChatId}");
                 return BadRequest("Sender is not a participant in this chat.");
             }
-
+            var senderName = _context.Register
+    .Where(u => u.Id == userId.Value)
+    .Select(u => u.firstName)
+    .FirstOrDefault();
             // Add the message to the database
             var message = new Message
             {
@@ -82,7 +85,7 @@ namespace Senior_Project.Controllers
 
             // Broadcast the message via SignalR
             await _hubContext.Clients.Group(request.ChatId.ToString())
-                .SendAsync("ReceiveMessage", request.ChatId, userId.Value, request.Content);
+                .SendAsync("ReceiveMessage", request.ChatId, senderName, request.Content);
 
             return Ok(new { message.MessageID, message.ChatID, message.Content, message.Timestamp });
         }

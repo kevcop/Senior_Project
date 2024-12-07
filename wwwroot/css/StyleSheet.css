@@ -1,14 +1,22 @@
-﻿body {
-    background-color: #5e8edb;
-    position: center;
+﻿/* General Styles */
+body {
+    background-color: #1b1f38; /* Deep blue obsidian */
+    color: #e1e5eb; /* Light text for readability */
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
-div{
+/* Divs */
+div {
     margin: auto;
+    padding: 10px;
+    text-align: center;
 }
 
+/* Centering Utility */
 .center {
-    position: center;
+    position: relative;
     top: 25%;
     width: 100%;
     text-align: center;
@@ -16,24 +24,102 @@ div{
     margin-top: 0px;
 }
 
-
-form{
-    position: center;
+/* Forms */
+form {
+    margin: 0 auto;
+    max-width: 600px; /* Limit form width */
 }
 
+/* Headings */
 h1 {
-    margin: 0;
+    margin: 10px auto;
     padding: 0;
     color: #e1e5eb;
-    text-shadow: 3px 3px 1px Black;
-    position: center;
-    margin: 10px;
-    font-size: 100px;
-    vertical-align: auto;
-    font-display: block;
-    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif
+    text-shadow: 3px 3px 1px black;
+    font-size: 60px; /* Slightly smaller for visibility */
+    text-align: center;
 }
-button{
-    position:center;
-    margin:10px;
+
+/* Buttons */
+button {
+    display: inline-block;
+    margin: 10px;
+    background-color: #5599ff; /* Vibrant blue */
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    text-align: center;
+    transition: background-color 0.3s ease, transform 0.2s;
+}
+
+    button:hover {
+        background-color: #88bbff; /* Lighter blue on hover */
+        transform: scale(1.05); /* Slight enlargement effect */
+    }
+
+/* Images */
+img {
+    max-width: 100%; /* Ensures images don't exceed their container */
+    height: auto; /* Maintains aspect ratio */
+    display: block; /* Ensures images don't add unwanted inline spacing */
+    margin: 10px auto;
+}
+
+/* Section Containers */
+.section {
+    padding: 20px;
+    margin: 20px auto;
+    background-color: #2a2f50; /* Slightly darker section background */
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    max-width: 1200px; /* Limit overall section width */
+    text-align: left; /* Align text to the left for readability */
+}
+
+    /* Section Headings */
+    .section h2 {
+        color: #e1e5eb;
+        text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.5);
+        font-size: 28px;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    /* Section Images */
+    .section img {
+        width: 300px; /* Set the standard width */
+        height: 200px; /* Set the standard height */
+        object-fit: cover; /* Ensures the image fits within the set dimensions while maintaining a good aspect ratio */
+        max-width: none; /* Prevents images from resizing based on container size */
+        margin: 15px auto;
+        border-radius: 8px;
+    }
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .section {
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 36px; /* Smaller headings on smaller screens */
+    }
+
+    button {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+
+    img {
+        width: 300px; /* Set the standard width */
+        height: 200px; /* Set the standard height */
+        object-fit: cover; /* Ensures the image fits the dimensions */
+        display: block;
+        margin: 10px auto;
+    }
+
 }

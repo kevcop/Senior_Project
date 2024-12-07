@@ -50,20 +50,32 @@ namespace Senior_Project.Controllers
                 _context.SaveChanges();
             }
 
-            // Retrieve images for attending and past events
-            var attendingEventImages = _context.Images
+            // Retrieve images and associated event details for attending events
+            var attendingEvents = _context.Images
                 .Where(img => profile.AttendingEvents.Contains(img.EventId))
+                .Select(img => new
+                {
+                    img.FilePath,
+                    Event = _context.Events.FirstOrDefault(e => e.EventID == img.EventId)
+                })
                 .ToList();
 
-            var pastEventImages = _context.Images
+            // Retrieve images and associated event details for past events
+            var pastEvents = _context.Images
                 .Where(img => profile.PastEvents.Contains(img.EventId))
+                .Select(img => new
+                {
+                    img.FilePath,
+                    Event = _context.Events.FirstOrDefault(e => e.EventID == img.EventId)
+                })
                 .ToList();
 
-            ViewBag.AttendingEventImages = attendingEventImages;
-            ViewBag.PastEventImages = pastEventImages;
+            ViewBag.AttendingEvents = attendingEvents;
+            ViewBag.PastEvents = pastEvents;
 
             return View(profile);
         }
+
 
 
         [HttpPost]
@@ -198,22 +210,94 @@ namespace Senior_Project.Controllers
                 _context.SaveChanges();
             }
 
-            // Retrieve images for attending and past events
-            var attendingEventImages = _context.Images
+            // Fetch detailed information for attending and past events
+            var attendingEvents = _context.Images
                 .Where(img => profile.AttendingEvents.Contains(img.EventId))
+                .Select(img => new
+                {
+                    img.FilePath,
+                    Event = _context.Events.FirstOrDefault(e => e.EventID == img.EventId)
+                })
                 .ToList();
 
-            var pastEventImages = _context.Images
+            var pastEvents = _context.Images
                 .Where(img => profile.PastEvents.Contains(img.EventId))
+                .Select(img => new
+                {
+                    img.FilePath,
+                    Event = _context.Events.FirstOrDefault(e => e.EventID == img.EventId)
+                })
                 .ToList();
 
-            // Add event images and current user ID to ViewBag
-            ViewBag.AttendingEventImages = attendingEventImages;
-            ViewBag.PastEventImages = pastEventImages;
+            // Prepare ViewBag to pass data to the view
+            ViewBag.AttendingEvents = attendingEvents;
+            ViewBag.PastEvents = pastEvents;
             ViewBag.CurrentUserId = HttpContext.Session.GetInt32("UserId"); // Pass the current user's ID
 
             // Pass the profile to the view
             return View("ViewByUsername", profile);
+        }
+
+
+
+        [HttpPost]
+        public IActionResult UpdateBio([FromBody] string bio)
+        {
+            try
+            {
+                var userId = HttpContext.Session.GetInt32("UserId");
+                if (userId == null)
+                {
+                    return Unauthorized("User session is not valid.");
+                }
+
+                var profile = _context.Profiles.FirstOrDefault(p => p.UserId == userId);
+                if (profile == null)
+                {
+                    return NotFound("User profile not found.");
+                }
+
+                profile.Bio = bio;
+                _context.Profiles.Update(profile);
+                _context.SaveChanges();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error updating bio: {ex.Message}", ex);
+                return StatusCode(500, "An error occurred while updating the bio.");
+            }
+        }
+
+        [HttpPost]
+        public IActionResult UpdateInterests([FromBody] string interests)
+        {
+            try
+            {
+                var userId = HttpContext.Session.GetInt32("UserId");
+                if (userId == null)
+                {
+                    return Unauthorized("User session is not valid.");
+                }
+
+                var profile = _context.Profiles.FirstOrDefault(p => p.UserId == userId);
+                if (profile == null)
+                {
+                    return NotFound("User profile not found.");
+                }
+
+                profile.Interests = interests;
+                _context.Profiles.Update(profile);
+                _context.SaveChanges();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error updating interests: {ex.Message}", ex);
+                return StatusCode(500, "An error occurred while updating the interests.");
+            }
         }
 
 
