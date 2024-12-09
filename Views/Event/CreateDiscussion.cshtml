@@ -1,14 +1,1 @@
-﻿<div>
-    <h1>Create a Discussion</h1>
-    @if (TempData["Error"] != null)
-    {
-        <p style="color: red;">@TempData["Error"]</p>
-    }
-    <form method="post" action="@Url.Action("CreateDiscussion", "Event", new { id = ViewBag.EventId })">
-        <div>
-            <label for="discussionTitle">Discussion Title</label>
-            <input type="text" id="discussionTitle" name="Title" required />
-        </div>
-        <button type="submit">Create</button>
-    </form>
-</div>
+﻿

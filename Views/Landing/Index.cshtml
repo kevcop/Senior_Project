@@ -1,167 +1,359 @@
-﻿@{
+﻿ORIGINAL
+@{
+    // Tab title
     ViewData["Title"] = "Landing";
 }
 
 <head>
+        <!-- Link to the external CSS stylesheet -->
     <link href="~/css/StyleSheet.css" rel="stylesheet" type="text/css" />
 </head>
+
 <div>
+    <!-- Link to the profile page -->
     <a class href="/profile">Profile</a>
-         
+     <!-- Search bar and button for users and events -->    
     <div style="float: right;">
+     <!--Search bar-->
     <input id="searchQuery" type="text" placeholder="Search for users or events...">
+    <!-- Search button -->
     <button type="button" onclick="search()">Search</button>
 </div>
 
 </div>
+<!-- Handle displaying search results -->
 <div id="searchResults" style="margin-top: 20px; display: none;">
     <h2>Search Results</h2>
 
     <!-- User Results -->
     <div id="userResults" style="margin-bottom: 20px; display: none;">
         <h3>Users</h3>
+        <!-- List to display user search results -->
         <ul id="userResultsList"></ul>
     </div>
 
     <!-- Event Results -->
     <div id="eventResults" style="display: none;">
         <h3>Events</h3>
+        <!-- List to display event search results -->
         <ul id="eventResultsList"></ul>
     </div>
 </div>
-<h1 class="text-center">Landing page</h1                                          
+
+<!-- Page Header -->
+<h1 class="text-center">Landing page</h1>
+
+<!-- Section for popular upcoming events -->
 <section id="popular-events">
     <h2 class="text-center">Popular Upcoming Events</h2>
-
+    <!-- Carousel style display for popular events -->
     <div class="carousel-container">
+        <!-- Previous slide button -->
         <a class="prev" onclick="prevSlide()">&#10094;</a>
-
+        <!-- Div for event slides -->
         <div class="event-slides" id="popular-events-container"></div>
-
+        <!-- Next slide button -->
         <a class="next" onclick="nextSlide()">&#10095;</a>
     </div>
-</section>
 
+</section>
+<!-- Section for local events -->
 <section id="local-events">
     <h2 class="text-center">Local Events Near You</h2>
 
     <div class="zip-input">
+        <!-- Input for zip code-->
         <input type="text" id="zip-code" placeholder="Enter Zip Code">
+        <!-- Button for searching by zip code -->
         <button onclick="debouncedFetch(fetchLocalEvents)">Search by Zip Code</button>
+        <!-- Button for sharing location -->
         <button onclick="debouncedFetch(fetchEventsByLocation)">Use My Location</button>
     </div>
 
+    <!-- Carousel style of display for local events -->
     <div class="carousel-container">
         <a class="prev" onclick="prevSlideLocal()">&#10094;</a>
-
+        <!-- Container for local event slides -->
         <div class="event-slides-local" id="local-events-container"></div>
-
+        <!-- Next slide button -->
         <a class="next" onclick="nextSlideLocal()">&#10095;</a>
     </div>
 </section>
 
+<!-- Section to create a new event -->
 <section id="create-event" class="text-center">
     <h2 style="margin-bottom: 10px;">Host Your Own Event</h2>
+    <!-- Button to take user to event creation page -->
     <button type="button" class="button" style="margin-top: 0;" onclick="window.location.href='/EventCreation/Create'">Create an Event</button>
 </section>
 
 
-
-
 <script>
+    // Track index for popular event slides
     let currentIndex = 0;
+    // Track index for local event slides
     let localCurrentIndex = 0;
-    const apiKey = '8QsGHUSyehy7U8hMEzRWSyNNvMHsqdbX'; // Replace with your actual API key
+    // Ticket master API key
+    const apiKey = '8QsGHUSyehy7U8hMEzRWSyNNvMHsqdbX'; 
+    // Variable to configure popular events
     const popularEventsContainer = document.getElementById('popular-events-container');
+    // Variable to configure local events
     const localEventsContainer = document.getElementById('local-events-container');
-    let lastTimeout = null;  // For debouncing
-        const userId = @ViewBag.UserId;
+    // Track debounce, helps delay a function
+    let lastTimeout = null
+    // Retrieve passed in User ID from controller
+    const userId = @ViewBag.UserId;
+    
+    /**/
+    /*
+    debouncedFetch(fetchFn)
 
-     
+    NAME
 
-    // Log the User ID to the console
-    console.log(`User ID: ${userId}`);
+            debouncedFetch -
 
-    // Helper: Debounce the fetch events
+    SYNOPSIS
+
+            void debouncedFetch(Function fetchFn);
+                fetchFn  --> The function to be called after some time 
+
+    DESCRIPTION
+
+            This function attempts to slow down the execution of a function that is passed to it. This is done to avoid rate limiting the API calls.
+            The execution of the function is slowed by 300 milliseconds. If a call to the function is made before the delay reaches 300 milliseconds, the timeout is cleared
+            and the delay resets.
+
+    RETURNS
+
+            None.
+
+    AUTHOR
+
+            Kevin Chicas
+
+    DATE
+
+            12/07/2024 10:12pm
+
+    */
+    /**/
+
     function debouncedFetch(fetchFn) {
         if (lastTimeout) clearTimeout(lastTimeout);
         lastTimeout = setTimeout(fetchFn, 300); // Wait 300ms before running the function
     }
 
-    // Helper: Clear event container before loading new events
+    /**/
+    /*
+    clearEventContainer(container)
+
+    NAME
+
+            clearEventContainer - Removes all child elements from a specified container.
+
+    SYNOPSIS
+
+            void clearEventContainer(HTMLElement container);
+                container  --> The DOM element whose contents will be cleared.
+
+    DESCRIPTION
+
+            This function takes a single DOM element as input and removes all
+            of its child elements. It is typically used to reset the content
+            of a container before dynamically loading new elements, ensuring
+            that outdated or duplicate data is not displayed.
+
+    RETURNS
+
+            None.
+
+    AUTHOR
+
+            Kevin Chicas
+
+    DATE
+
+            12/07/2024 10:19
+
+    */
+    /**/
     function clearEventContainer(container) {
         container.innerHTML = '';
     }
 
-    // Reset slide index after clearing or switching event source
+    /**/
+    /*
+    resetSlideIndex()
+
+    NAME
+
+            resetSlideIndex - Resets the slide index
+
+    SYNOPSIS
+
+            void resetSlideIndex();
+
+    DESCRIPTION
+            This function ensures the carousel feature will always begin with the first slide whenever new data is loaded in. This is done 
+            because popular events and local events are dynamically updated. The user will always see the first event of the slides
+    RETURNS
+
+            None.
+
+    AUTHOR
+        Kevin Chicas
+    DATE
+        12/07/2024 10:29 PM
+    */
+    /**/
     function resetSlideIndex() {
         currentIndex = 0;
         localCurrentIndex = 0;
     }
 
-    // Fetch popular events from Ticketmaster API (one sporting event, one concert, one theater event)
+    /**/
+    /*
+    fetchPopularEvents()
+
+    NAME
+
+            fetchPopularEvents - Retrieves popular events from Ticketmaster API
+
+    SYNOPSIS
+
+            async function fetchPopularEvents();
+
+    DESCRIPTION
+            Using API keywords, this function will look to retrieve events from Ticketmaster. 
+            It will retrieve events for the sports, concerts, and theater type events. The events will
+            also be saved to the database upon fetching and will work with the frontend to update the
+            carousel display of events
+    RETURNS
+            None
+
+    AUTHOR
+
+            Kevin Chicas
+
+    DATE
+
+            12/08/2024 11:13 AM
+
+    */
+    /**/
+
 async function fetchPopularEvents() {
+    // Attempt to retrieve data
     try {
+        // Retrieve sporting events from Ticketmaster
         const sports_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?countryCode=US&apikey=${apiKey}`);
         const sports_data = await sports_response.json();
 
+        // Verify data retrieved, all event related info is stored in the embedded section
         if (sports_data._embedded && sports_data._embedded.events.length > 0) {
+            // Iterate through results
             for (const event of sports_data._embedded.events) {
                 // Save the event to the database
                 await saveEventToDatabase(event);
+                // Add event to event slides
                 updateSingleEvent(event, popularEventsContainer);
             }
         }
-
+        // Retrieve concert events from Ticketmaster
         const concerts_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?keyword=Concert&apikey=${apiKey}`);
         const concerts_data = await concerts_response.json();
-
+        // Verify data retrieved, all event related info is stored in the embedded section
         if (concerts_data._embedded && concerts_data._embedded.events.length > 0) {
+            // Iterate through results
             for (const event of concerts_data._embedded.events) {
+                // Save event to the database
                 await saveEventToDatabase(event);
+                // Add event to slides
                 updateSingleEvent(event, popularEventsContainer);
             }
         }
-
+        // Retrieve theater events from Ticketmaster
         const theater_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?keyword=Theater&countryCode=US&apikey=${apiKey}`);
         const theater_data = await theater_response.json();
-
+        // Verify data retrieved, all event related info is stored in the embedded section
         if (theater_data._embedded && theater_data._embedded.events.length > 0) {
+            // Iterate through results 
             for (const event of theater_data._embedded.events) {
+                // Save event to the database
                 await saveEventToDatabase(event);
+                // Add event to the slides
                 updateSingleEvent(event, popularEventsContainer);
             }
         }
-
+    // Log error if one occurs 
     } catch (error) {
         console.error('Error fetching popular events:', error);
     }
 }
 
-// Save the event to your database via an API endpoint
+    /**/
+    /*
+    saveEventToDatabase(event)
+
+    NAME
+
+            saveEventToDatabase - Saves an event to the database
+
+    SYNOPSIS
+
+            async function saveEventToDatabase(Object event);
+                event  --> The object retrieved from API response
+
+    DESCRIPTION
+            This function aims to send an event object to the /Event/SaveEvent backend endpoint to attempt
+            to save the event to the database. The function sends the relevant event details to the endpoint for 
+            storage. 
+    RETURNS
+
+            None.
+
+    AUTHOR
+
+            Kevin Chicas
+
+    DATE
+
+            11:45am 12/08/2024
+
+    */
+    /**/
 async function saveEventToDatabase(event) {
     try {
+        // Information to be sent to the endpoint
         const payload = {
-            eventId: event.id, // External ID from Ticketmaster
+            // Ticketmaster id for event
+            eventId: event.id, 
+            // Event name, if none is provided use "unnamed event"
             eventName: event.name || 'Unnamed Event',
+            // Event description
             description: event.info || '',
+            // Event date
             eventDate: event.dates.start.localDate || new Date().toISOString(),
+            // Event location
             location: event._embedded?.venues?.[0]?.name || 'Unknown Location',
+            // Event category
             category: event.classifications?.[0]?.segment?.name || 'General',
+            // Event related image attributes
             images: event.images?.map(img => ({
                 url: img.url,
                 width: img.width,
                 height: img.height
             })),
+            // Type of event
             isPublic: true
         };
-
+        // POST Request to endpoint for saving an event using JSON format
         const response = await fetch('/Event/SaveEvent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
+        // Handle response status CHECK THIS
         if (response.ok) {
             console.log(`Event ${event.id} saved successfully.`);
         } else if (response.status === 409) {
@@ -175,101 +367,136 @@ async function saveEventToDatabase(event) {
 }
 
 
+    /**/
+    /*
+    fetchLocalEvents()
 
+    NAME
 
-    // Fetch local events based on the zip code (one sporting event, one concert, one theater event)
+            fetchLocalEvents - Get local events based on a user inputted zip code
+
+    SYNOPSIS
+
+            async function fetchLocalEvents();
+
+    DESCRIPTION
+            This function uses a zip code to fetch the events that are near a user. It searches
+            for events of categories : theater, sport, and concert; using the ticketmaster API.
+            Makes a call to another function to get the state assosciated with the zip code since the ticketmaster
+            API does not function as expected when supplying a zip code (Inconsistent results). Will use the state instead of zip code
+            when fetching from the API. 
+    RETURNS
+
+            None.
+
+    AUTHOR
+
+            Kevin Chicas
+
+    DATE
+
+            12/08/2024 12:02 PM
+
+    */
+    /**/
     async function fetchLocalEvents() {
-        clearEventContainer(localEventsContainer); // Clear the local events container before loading new events
-        resetSlideIndex(); // Reset the slide index to avoid out-of-bounds access
-
+        // Clear slides each time to not overload
+        clearEventContainer(localEventsContainer); 
+        // Ensures slides start from beginning event
+        resetSlideIndex(); 
+        // Extract zip code 
         const zipCode = document.getElementById('zip-code').value; // Get the entered zip code
+        // Handle case where no input is provided yet button is clicked 
         if (!zipCode) {
             alert('Please enter a zip code!');
             return;
         }
-
+        // Convert zip to a state
         const state = await getStateFromZip(zipCode);
+        // Validate state
         if (state) {
             try {
+                // Fetch sporting related events
                 const sports_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&stateCode=${state}&keyword=Sports`);
+                // Convert response to JSON 
                 const sports_data = await sports_response.json();
+                // If valid results
                 if (sports_data._embedded && sports_data._embedded.events.length > 0) {
+                    // Add event to slides
                     updateSingleEvent(sports_data._embedded.events[0], localEventsContainer);
                 }
-
+                // Fetch concert related events
                 const concert_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&stateCode=${state}&keyword=Concert`);
+                // Convert response to JSON 
                 const concert_data = await concert_response.json();
+                // If valid results
                 if (concert_data._embedded && concert_data._embedded.events.length > 0) {
+                    // Add event to local slides
                     updateSingleEvent(concert_data._embedded.events[0], localEventsContainer);
                 }
-
+                // Fetch theater events
                 const theater_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&stateCode=${state}&keyword=Theater`);
+                // Convert response to JSON 
                 const theater_data = await theater_response.json();
+                // Validate results
                 if (theater_data._embedded && theater_data._embedded.events.length > 0) {
+                    // Add event to the local slides
                     updateSingleEvent(theater_data._embedded.events[0], localEventsContainer);
                 }
+            // Log error
             } catch (error) {
                 console.error('Error fetching local events:', error);
             }
+            // Handle case where invalid zip is given
         } else {
             console.error('Could not determine state from zip code.');
         }
     }
 
-    // Fetch events based on geolocation (one sporting event, one concert, one theater event)
-    function fetchEventsByLocation() {
-        clearEventContainer(localEventsContainer); // Clear the local events container before loading new events
-        resetSlideIndex(); // Reset the slide index to avoid out-of-bounds access
+    /**/
+    /*
+    getStateFromZip(zipCode)
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(async function (position) {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
+    NAME
 
-                console.log(`Latitude: ${lat}, Longitude: ${lon}`);
+            getStateFromZip - Gets state in 2 letter format(e.g NJ, NY) using zip code 
 
-                try {
-                    const sports_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&latlong=${lat},${lon}&keyword=Sports`);
-                    const sports_data = await sports_response.json();
-                    if (sports_data._embedded && sports_data._embedded.events.length > 0) {
-                        updateSingleEvent(sports_data._embedded.events[0], localEventsContainer);
-                    }
+    SYNOPSIS
 
-                    const concert_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&latlong=${lat},${lon}&keyword=Concert`);
-                    const concert_data = await concert_response.json();
-                    if (concert_data._embedded && concert_data._embedded.events.length > 0) {
-                        updateSingleEvent(concert_data._embedded.events[0], localEventsContainer);
-                    }
+            async function getStateFromZip(string zipCode);
+                zipCode  --> The zip code provided by the user.
 
-                    const theater_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&latlong=${lat},${lon}&keyword=Theater`);
-                    const theater_data = await theater_response.json();
-                    if (theater_data._embedded && theater_data._embedded.events.length > 0) {
-                        updateSingleEvent(theater_data._embedded.events[0], localEventsContainer);
-                    }
-                } catch (error) {
-                    console.error('Error fetching events by geolocation:', error);
-                }
-            }, function (error) {
-                alert('Geolocation not supported or permission denied. Please enter a zip code instead.');
-            });
-        } else {
-            alert("Geolocation is not supported by this browser.");
-        }
-    }
+    DESCRIPTION
+            Using Zippopotam.Us API, this function is able to retrieve a state abbreviation
+            using the zip code provided by the user.
+    RETURNS
+            The state abbreviation in string format.
 
-    // Fetch the state using the zip code with Zippopotam.us API
+    AUTHOR
+            Kevin Chicas
+    DATE
+            12/08/2024 12:20 PM
+
+    */
+    /**/
+
     async function getStateFromZip(zipCode) {
         try {
+            // Make a request to the Zippopotam.us API using the zipcode provided
             const response = await fetch(`https://api.zippopotam.us/us/${zipCode}`);
+            // Validate response 
             if (response.ok) {
+                // Convert response to json format
                 const data = await response.json();
+                // Extract abbreviated state
                 const state = data.places[0]['state abbreviation'];
-                console.log(`State for zip code ${zipCode}: ${state}`);
+                // Return result
                 return state;
             } else {
+                // Handle case where zip code is invalid
                 alert('Invalid zip code. Please enter a valid zip code.');
-                console.error('Invalid zip code or error fetching location data');
             }
+            // Error handling 
         } catch (error) {
             console.error('Error fetching state from zip code:', error);
             alert('Error fetching state from zip code.');
@@ -277,13 +504,134 @@ async function saveEventToDatabase(event) {
         return null;
     }
 
+    /**/
+    /*
+    fetchEventsByLocation()
+
+    NAME
+
+            fetchEventsByLocation - Uses a users geolocation to fetch local events, an alternative to providing a zip code
+
+    SYNOPSIS
+
+            void fetchEventsByLocation();
+
+    DESCRIPTION
+            If a user is willing to share their location, this function will find their exact location
+            by using longitude and latitude. The function then uses the longitude and latitude in the API call 
+            to fetch events assosciated. Searches for events related to sports, concerts, and theater. Will add each event
+            to the local events slide. 
+    RETURNS
+
+            None.
+
+    AUTHOR
+
+            Kevin Chicas
+
+    DATE
+
+            12/08/2024 12:37pm
+
+    */
+    /**/
+    function fetchEventsByLocation() {
+        // Clears local event slides
+        clearEventContainer(localEventsContainer); 
+        // Ensures slides are set to the initial event 
+        resetSlideIndex();
+        // Checking browser support of geolocation
+        if (navigator.geolocation) {
+            // Request user location
+            navigator.geolocation.getCurrentPosition(async function (position) {
+                // Get latitude
+                const lat = position.coords.latitude;
+                // Get longitude
+                const lon = position.coords.longitude;
+
+
+                try {
+                    // Fetch sporting event
+                    const sports_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&latlong=${lat},${lon}&keyword=Sports`);
+                    // Convert response to JSON 
+                    const sports_data = await sports_response.json();
+                    // Validate responnse
+                    if (sports_data._embedded && sports_data._embedded.events.length > 0) {
+                        // Update local slides
+                        updateSingleEvent(sports_data._embedded.events[0], localEventsContainer);
+                    }
+                    // Fetch concert event
+                    const concert_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&latlong=${lat},${lon}&keyword=Concert`);
+                    // Convert response to JSON
+                    const concert_data = await concert_response.json();
+                    // Validate response
+                    if (concert_data._embedded && concert_data._embedded.events.length > 0) {
+                        // Add event to slides
+                        updateSingleEvent(concert_data._embedded.events[0], localEventsContainer);
+                    }
+                    // Fetch theater event
+                    const theater_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&latlong=${lat},${lon}&keyword=Theater`);
+                    // Convert response to JSON
+                    const theater_data = await theater_response.json();
+                    // Validate response
+                    if (theater_data._embedded && theater_data._embedded.events.length > 0) {
+                        // Add event to local slides
+                        updateSingleEvent(theater_data._embedded.events[0], localEventsContainer);
+                    }
+                 // Error handling 
+                } catch (error) {
+                    console.error('Error fetching events by geolocation:', error);
+                }
+            // Handle case where geolocation related errors or if user does not want to share location
+            }, function (error) {
+                alert('Geolocation not supported or permission denied. Please enter a zip code instead.');
+            });
+            // Handle case where browser does not support geolocation
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+
+    /**/
+    /*
+    updateSingleEvent(event, container)
+
+    NAME
+
+            updateSingleEvent - Display events for popular or local slides
+
+    SYNOPSIS
+
+            void updateSingleEvent(Object event, HTMLElement container);
+                event     --> The event object 
+                container --> Where to display
+
+    DESCRIPTION
+            This function generates the HTML needed to contain a single event and will append it
+            to the slideshow. It will hold the image, details, and ticketmaster link for an event. 
+    RETURNS
+
+            None.
+
+    AUTHOR
+
+            Kevin Chicas
+
+    DATE
+
+           12/08/2024 12:49 PM
+
+    */
+    /**/
     // Function to dynamically generate a single event slide and inject it into the HTML
     function updateSingleEvent(event, container) {
+        // If invalid event object, function returns and does nothing 
         if (!event) return;
-
+        // Create a new div 
         const eventItem = document.createElement('div');
+        // Add class for styling
         eventItem.classList.add('event-item');
-
+        // HTML structure for the event, accounts for image and event details  
         eventItem.innerHTML = `
                             <img src="${event.images[0].url}" alt="${event.name}">
                             <div class="event-info">
@@ -292,91 +640,318 @@ async function saveEventToDatabase(event) {
                                 <a href="${event.url}" target="_blank" class="button">Learn More</a>
                             </div>
                         `;
+        // Add event to the slideshow
         container.appendChild(eventItem);
-
-        showSlidesLocal(0, container); // Show the first slide only if slides exist
+        // Show first slide
+        showSlidesLocal(0, container); 
     }
+    /**/
+/*
+showSlides(n, container)
+
+NAME
+
+        showSlides - Display a slide in carousel layout
+
+SYNOPSIS
+
+        void showSlides(int n, HTMLElement container);
+            n         --> Index of slides
+            container --> Where to display
+
+DESCRIPTION
+        Handles displaying a slide based on the current index which is increased or decreased
+        depending on user selection. If user reaches the end of slides, it will reset to the beginning slide.
+        Shows only one slide at a time.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 1:08PM
+
+*/
+/**/
 
     function showSlides(n, container) {
+        // Get all slides for a section
         let slides = container.getElementsByClassName("event-item");
-        if (slides.length === 0) return; // No slides to show
-
+        // Case where there are no slides 
+        if (slides.length === 0) return; 
+        // Get total number of slides
         let totalSlides = slides.length;
+        // Hide all slides 
         for (let i = 0; i < totalSlides; i++) {
             slides[i].style.display = "none";
         }
-
+        // Adjust index to loop back if index exceeds slide count
         if (n >= totalSlides) {
             currentIndex = 0;
         }
-        if (n < 0) {
-            currentIndex = totalSlides - 1;
-        }
-
+        // Display slide 
         slides[currentIndex].style.display = "block";
     }
+    /**/
+/*
+showSlidesLocal(n, container)
+
+NAME
+
+        showSlidesLocal - Displays a slide for local events section
+
+SYNOPSIS
+
+        void showSlidesLocal(int n, HTMLElement container);
+            n         --> Index of slides 
+            container --> Where to display
+
+DESCRIPTION
+        Handles displaying a slide based on the current index which is increased or decreased
+        depending on user selection. If user reaches the end of slides, it will reset to the beginning slide.
+        Shows only one slide at a time.
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 1:30 pm 
+
+*/
+/**/
 
     function showSlidesLocal(n, container) {
+        // Get all slides for the section
         let slides = container.getElementsByClassName("event-item");
-        if (slides.length === 0) return; // No slides to show
-
+        // Handle case where there are no slides
+        if (slides.length === 0) return; 
+        // Get the total number of slides 
         let totalSlides = slides.length;
+        // Hide all slides
         for (let i = 0; i < totalSlides; i++) {
             slides[i].style.display = "none";
         }
-
+        // Adjust index to loop back if index exceeds slide count
         if (n >= totalSlides) {
             localCurrentIndex = 0;
         }
-        if (n < 0) {
-            localCurrentIndex = totalSlides - 1;
-        }
 
+        // Show slides 
         slides[localCurrentIndex].style.display = "block";
     }
+    /**/
+/*
+nextSlide()
+
+NAME
+
+        nextSlide - Take users to following slide 
+
+SYNOPSIS
+
+        void nextSlide();
+
+DESCRIPTION
+        Increments the currentIndex global variable which is used to track 
+        the current slide. Will increment to show the following slide. Calls the showslides
+        function with the updated index and popular events section.
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 1:37 pm
+
+*/
 
     function nextSlide() {
+        // Increment global variable used to track current slide
         currentIndex++;
+        // Display slide
         showSlides(currentIndex, popularEventsContainer);
     }
+/**/
+/*
+prevSlide()
+
+NAME
+
+        prevSlide - Move to the previous slide 
+
+SYNOPSIS
+
+        void prevSlide();
+
+DESCRIPTION
+        Decrements the currentIndex global variable which is used to track 
+        the current slide. Will decrement to show the previous slide. Calls the showslides
+        function with the updated index and popular events section.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 1:43 pm
+
+*/
+/**/
 
     function prevSlide() {
+        // Decrement global variable used to track current slide 
         currentIndex--;
+        // Display slide
         showSlides(currentIndex, popularEventsContainer);
     }
 
+/**/
+/*
+nextSlideLocal()
+
+NAME
+
+        nextSlideLocal - Moves to the next slide in the local events slides 
+
+SYNOPSIS
+
+        void nextSlideLocal();
+
+DESCRIPTION
+        Increments the localCurrentIndex global variable which is used to track 
+        the current slide. Will increment to show the following slide. Calls the showslides
+        function with the updated index and local events section.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 1:45 pm
+
+*/
+/**/
     function nextSlideLocal() {
+        // Increment global variable used to track local slides index
         localCurrentIndex++;
+        // Display slide 
         showSlidesLocal(localCurrentIndex, localEventsContainer);
     }
+    /**/
+/*
+prevSlideLocal()
+
+NAME
+
+        prevSlideLocal - Moves to the previous slide for local events slide 
+
+SYNOPSIS
+
+        void prevSlideLocal();
+
+DESCRIPTION
+        Decrements the localCurrentIndex global variable which is used to track 
+        the current slide. Will decrement to show the previous slide. Calls the showslides
+        function with the updated index and local events section.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 1:49 PM
+
+*/
+/**/
 
     function prevSlideLocal() {
+        // Decrement global variable used to track local slides index 
         localCurrentIndex--;
+        // Disiplay slide
         showSlidesLocal(localCurrentIndex, localEventsContainer);
     }
 
-    function testing(){
-        console.log("Hello");
-    }
-
-    // Fetch events on page load
+    // When landing page is loaded, perform the fetching of popular events
     window.onload = function () {
         fetchPopularEvents();
     }
 
+        /**/
+    /*
+    search()
+
+    NAME
+
+            search - Searches for users or events 
+
+    SYNOPSIS
+
+            async function search();
+
+    DESCRIPTION
+            This function uses the users search query to match to other usernames and event names. It validates 
+            the query to ensure it is not empty. Sends a GET request to the search endpoint with the query. The backend
+            will respond with potential matches in the respective databases. 
+    RETURNS
+
+            None.
+
+    AUTHOR
+
+            Kevin Chicas
+
+    DATE
+
+            12/08/2024 1:55 PM
+
+    */
+
      // User search functionality
 async function search() {
+    // Get the search query
     const query = document.getElementById("searchQuery").value.trim();
+    // Handle case where query is empty and search is attempted
     if (!query) {
         alert("Please enter a search term.");
         return;
     }
 
     try {
+        // Send GET request to search endpoint with the query
         const response = await fetch(`/Landing/SearchUsers?query=${encodeURIComponent(query)}`);
+        // Transform results from bacakend into JSON
         const data = await response.json();
-
-        console.log("API Response:", data); // Log API response
+        //Debug statement for viewing response
+        console.log("API Response:", data); 
 
         // Clear previous results
         const userResults = document.getElementById("userResults");
@@ -388,32 +963,38 @@ async function search() {
         eventResults.style.display = "none";
         eventResultsList.innerHTML = "";
 
-        // Handle message (e.g., no results found)
+        // Handle case where the no matches are found from search 
         if (data.message) {
             alert(data.message);
             return;
         }
 
-        // Display user results if any
+        // Display user results 
         if (data.users && data.users.length > 0) {
+            // Make results visibile 
             userResults.style.display = "block";
             data.users.forEach(user => {
+                // Create list to hold each result 
                 const listItem = document.createElement("li");
+                // HTML for displaying results 
                 listItem.innerHTML = `
                     <strong>${user.username}</strong> - ${user.firstName} ${user.lastName}
                     <a href="${user.profileLink}" class="button">View Profile</a>
                 `;
+                // Add user to list 
                 userResultsList.appendChild(listItem);
             });
         }
 
-        // Display event results if any
+        // Display event results 
         if (data.events && data.events.length > 0) {
+            // Make results visible 
             eventResults.style.display = "block";
             data.events.forEach(event => {
+                // Create list to hold each result 
                 const listItem = document.createElement("li");
 
-                // Generate image display HTML
+                // HTML structure image
                 let imagesHtml = "";
                 if (event.images && event.images.length > 0) {
                     imagesHtml = event.images
@@ -422,7 +1003,7 @@ async function search() {
                         )
                         .join("");
                 }
-
+                // HTML for displaying the results along with event details 
                 listItem.innerHTML = `
                     <div style="display: flex; align-items: center;">
                         ${imagesHtml}
@@ -433,19 +1014,17 @@ async function search() {
                         </div>
                     </div>
                 `;
+                // Add event to the list 
                 eventResultsList.appendChild(listItem);
             });
         }
 
-        // Show search results container
+        // Show search results 
         document.getElementById("searchResults").style.display = "block";
-
+    // Error handling
     } catch (error) {
         console.error("Error fetching search results:", error);
         alert("An error occurred while searching. Please try again later.");
     }
 }
-
-
-
 </script>

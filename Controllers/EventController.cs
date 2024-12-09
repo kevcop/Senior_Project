@@ -12,31 +12,49 @@ using Microsoft.Extensions.Logging;
 
 namespace Senior_Project.Controllers
 {
+    /// <summary>
+    /// Controller used for event related functionalities
+    /// </summary>
     public class EventController : Controller
     {
+        // Database variable for accessing user and profile data 
         private readonly NewContext2 _context;
+        // HTTP context
         private readonly IHttpContextAccessor _contextAccessor;
+        // Variable for debugging issues
         private readonly ILogger<EventController> _logger;
-
+        /// <summary>
+        /// Initializes an instance of the controller 
+        /// </summary>
+        /// <param name="context"> Database context variable used for database</param>
+        /// <param name="httpContextAccessor">HTTP Context accessor for session management</param>
+        /// <param name="logger">Used for debugging</param>
         public EventController(NewContext2 context, IHttpContextAccessor contextAccessor, ILogger<EventController> logger)
         {
+            // Initialize variables 
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _contextAccessor = contextAccessor ?? throw new ArgumentNullException(nameof(contextAccessor));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // API to search for events based on a query
+        /// <summary>
+        /// Search for functions 
+        /// </summary>
+        /// <param name="query"> Content to search for provided by the user </param>
+        /// <returns> JSON response that includes all the matching events to the search </returns>
         [HttpGet]
         public IActionResult Search(string query)
         {
+            // Handle event where query is not populated 
             if (string.IsNullOrWhiteSpace(query))
             {
-                return Json(new List<object>()); // Return empty result if query is null/empty
+                return Json(new List<object>()); 
             }
+            // Debug query received 
             _logger.LogInformation($"Search query received: {query}");
-
+            // Retrieve events that match query based on event name and category 
             var events = _context.Events
-                .Where(e => e.EventName.Contains(query) || e.Category.Contains(query)) // Search by name or category
+                .Where(e => e.EventName.Contains(query) || e.Category.Contains(query)) 
                 .Select(e => new
                 {
                     e.EventID,
@@ -46,9 +64,14 @@ namespace Senior_Project.Controllers
                     e.EventDate
                 })
                 .ToList();
-
+            // Return results
             return Json(events);
         }
+        /// <summary>
+        /// Saves an event to the database along with the images related to it
+        /// </summary>
+        /// <param name="eventDto"> Object that contains the event details</param>
+        /// <returns>Different status codes depending on if saving was successful or not </returns>
 
         // Endpoint to save events fetched from Ticketmaster API
         [HttpPost]
@@ -56,6 +79,7 @@ namespace Senior_Project.Controllers
         {
             try
             {
+                // Validate event data
                 if (eventDto == null)
                 {
                     _logger.LogWarning("Received null EventDto.");
@@ -64,8 +88,9 @@ namespace Senior_Project.Controllers
 
                 _logger.LogInformation($"Saving Event: {eventDto.EventName}, ExternalID: {eventDto.EventId}");
 
-                // Retrieve UserID from the session
+                // Get userid from the session
                 var userId = _contextAccessor.HttpContext.Session.GetInt32("UserId");
+                // Handle case where a user is not logged in 
                 if (userId == null)
                 {
                     _logger.LogWarning("Session does not contain a valid UserId.");
@@ -74,7 +99,7 @@ namespace Senior_Project.Controllers
 
                 _logger.LogInformation($"Retrieved UserId from session: {userId}");
 
-                // Convert EventId to string for comparison
+                // Convert EventId to string for comparison CHECK HERE
                 var externalEventId = eventDto.EventId.ToString();
 
                 // Check if the event already exists using ExternalEventID
@@ -85,10 +110,10 @@ namespace Senior_Project.Controllers
                     return Conflict("Event already exists.");
                 }
 
-                // Create and save the event
+                // Create new event using the passed in data 
                 var newEvent = new Event
                 {
-                    ExternalEventID = externalEventId, // Save ExternalID for external events
+                    ExternalEventID = externalEventId, 
                     EventName = eventDto.EventName,
                     Description = eventDto.Description,
                     EventDate = DateTime.Parse(eventDto.EventDate),
@@ -101,51 +126,66 @@ namespace Senior_Project.Controllers
                 };
 
                 _logger.LogInformation("Adding new event to the database...");
+                // Add event to database
                 _context.Events.Add(newEvent);
+                // Save event 
                 await _context.SaveChangesAsync();
 
-                // Save images for the event
+                // Debug amount of images received 
                 _logger.LogInformation($"Saving {eventDto.Images.Count} images for event ID: {eventDto.EventId}");
+                // Iterate through images 
                 foreach (var imageDto in eventDto.Images)
                 {
+                    // Download image data 
                     var imageData = await DownloadImageAsByteArray(imageDto.Url);
                     if (imageData != null)
                     {
+                        // Creating a new image entry 
                         var eventImage = new EventImage
                         {
                             EventId = newEvent.EventID,
                             ContentType = "image/jpeg",
                             Added = DateTime.Now
                         };
+                        // Add image to database
                         _context.Images.Add(eventImage);
                     }
                     else
                     {
+                        // Log error
                         _logger.LogWarning($"Failed to download image for URL: {imageDto.Url}");
                     }
                 }
-
+                // Save image to database
                 await _context.SaveChangesAsync();
                 _logger.LogInformation($"Event {eventDto.EventId} saved successfully.");
+                // Indicate image has been saved 
                 return Ok();
             }
+            // Error handling 
             catch (Exception ex)
             {
                 _logger.LogError($"Error saving event: {ex.Message}", ex);
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-
-        // Helper method to download image as byte array
+        /// <summary>
+        /// Downloads an image from a URL
+        /// </summary>
+        /// <param name="imageUrl"> Url of the image to download</param>
+        /// <returns> The binary data of the image as a byte array </returns>
         private async Task<byte[]> DownloadImageAsByteArray(string imageUrl)
         {
             try
             {
+                // Webclient will download the image as a byte array
                 using (var client = new WebClient())
                 {
+                    // Return the byte array 
                     return await client.DownloadDataTaskAsync(imageUrl);
                 }
             }
+            // Error handling if downloading an image fails 
             catch (Exception ex)
             {
                 _logger.LogError($"Error downloading image from {imageUrl}: {ex.Message}", ex);
@@ -153,45 +193,55 @@ namespace Senior_Project.Controllers
             }
         }
 
+        /// <summary>
+        /// Gets the details of an event using its id 
+        /// </summary>
+        /// <param name="id"> The event id </param>
+        /// <returns> The view related to the event</returns>
         [HttpGet("/Events/Details/{id}")]
         public IActionResult Details(int id)
         {
-            // Log the received ID
+            // Logging id received, used for debugging 
             _logger.LogInformation($"Details action called with ID: {id}");
 
-            // Fetch the event by ID, including associated images
+            // Fetch the event by ID and the related images 
             var eventDetails = _context.Events
-                .Include(e => e.Images) // Ensure related images are included
+                .Include(e => e.Images) 
                 .FirstOrDefault(e => e.EventID == id);
-
+            // Handle case where event does not exist 
             if (eventDetails == null)
             {
-                _logger.LogWarning($"Event with ID {id} not found.");
                 return NotFound($"Event with ID {id} not found.");
             }
-
-            ViewBag.EventId = id; // Pass EventId to the view for form action
+            // Pass event id to the view 
+            ViewBag.EventId = id; 
+            // Display the view of the event 
             return View(eventDetails);
         }
-
-
-
+        /// <summary>
+        /// Creates a discussion for an event
+        /// </summary>
+        /// <param name="id"> The event ID </param>
+        /// <param name="Title"> The discussion title </param>
+        /// <returns> Redirects to the same details page where the new discussion should be displayed </returns>
         [HttpPost("Events/CreateDiscussion/{id}")]
         public IActionResult CreateDiscussion(int id, string Title)
         {
+            // Handle case where the discussion title input is empty 
             if (string.IsNullOrWhiteSpace(Title))
             {
                 TempData["Error"] = "Discussion title cannot be empty.";
                 return RedirectToAction("Details", new { id });
             }
-
+            // Check if event exists 
             var eventExists = _context.Events.Any(e => e.EventID == id);
             if (!eventExists)
             {
+                // Error handling when event is not found 
                 TempData["Error"] = $"Event with ID {id} not found.";
                 return RedirectToAction("Details", new { id });
             }
-
+            // Create a new chat based on the discussion inputs, treat it as a group chat 
             var discussion = new Chat
             {
                 ChatName = Title,
@@ -200,29 +250,36 @@ namespace Senior_Project.Controllers
                 EventId = id,
                 CreatedDate = DateTime.UtcNow
             };
-
+            // Add discussion to chats database
             _context.Chats.Add(discussion);
+            // Save changes
             _context.SaveChanges();
-
+            // Indicate to user discussion was created 
             TempData["Success"] = "Discussion created successfully.";
+            // Reload page to show new discussion 
             return RedirectToAction("Details", new { id });
         }
 
-
+        /// <summary>
+        /// Retrieves list of discussions for an event 
+        /// </summary>
+        /// <param name="eventId"> The event specific id </param>
+        /// <returns></returns>
         [HttpGet("Events/Discussions/List/{eventId}")]
         public IActionResult GetDiscussions(int eventId)
         {
+            // Verifying correct/valid event id is passed 
             _logger.LogInformation($"Fetching discussions for EventID: {eventId}");
 
             try
             {
-                // Log the raw database query
+                // Query to use to search the database
                 var discussionsQuery = _context.Chats
                     .Where(c => c.EventId == eventId && c.IsDiscussion);
 
                 _logger.LogInformation($"Raw Query: {discussionsQuery.ToQueryString()}");
 
-                // Execute the query and select desired fields
+                // Search database using query 
                 var discussions = discussionsQuery
                     .Select(c => new
                     {
@@ -232,21 +289,24 @@ namespace Senior_Project.Controllers
                     })
                     .ToList();
 
-                // Log the results
+                // Handle case where no discussions are found 
                 if (!discussions.Any())
                 {
                     _logger.LogInformation($"No discussions found for EventID: {eventId}");
-                    return Ok(new List<object>()); // Return empty list instead of 404
+                    return Ok(new List<object>()); 
                 }
-
+                // Log discussions retrieved 
                 _logger.LogInformation($"Retrieved {discussions.Count} discussions for EventID: {eventId}");
+                // Iterate through each discussion, debugging purposes
                 foreach (var discussion in discussions)
                 {
+                    // Log discussion info
                     _logger.LogInformation($"Discussion: ID={discussion.ChatID}, Name={discussion.ChatName}, Created={discussion.CreatedDate}");
                 }
-
+                // Return list of discussions
                 return Ok(discussions);
             }
+            // Error handling 
             catch (Exception ex)
             {
                 _logger.LogError($"Error fetching discussions for EventID: {eventId}. Exception: {ex.Message}");
@@ -254,92 +314,123 @@ namespace Senior_Project.Controllers
             }
         }
 
-
+        /// <summary>
+        ///  Displays a discussion
+        /// </summary>
+        /// <param name="chatID"> The group chat id </param>
+        /// <returns> The view file for the group discussion </returns>
 
         [HttpGet("Events/Discussions/View/{chatID}")]
         public IActionResult ViewDiscussion(int chatID)
         {
+            // Verifying we are entering the correct discussion
             _logger.LogInformation($"Entering ViewDiscussion. Received ID: {chatID}");
-
+            // Handle case where the chat id is invalid or not specified 
             if (chatID <= 0)
             {
                 _logger.LogWarning("Invalid discussion ID received. ID must be greater than 0.");
                 return BadRequest("Invalid discussion ID.");
             }
-
+            // Check if discussion exists in the chat database
             var discussionExists = _context.Chats.Any(c => c.ChatID == chatID && c.IsDiscussion);
+            // Handle case where no chat is found with the specified chat id 
             if (!discussionExists)
             {
                 _logger.LogWarning($"Discussion with ID {chatID} not found.");
                 return NotFound($"Discussion with ID {chatID} not found.");
             }
+            // Extract the user id 
             var currentUserId = _contextAccessor.HttpContext.Session.GetInt32("UserId");
+            // Pass the user id to the view 
             ViewBag.CurrentUserId = currentUserId ?? 0;
             _logger.LogInformation($"Discussion with ID {chatID} found. Redirecting to ViewDiscussion.cshtml.");
-            return View("ViewDiscussion", chatID); // Pass discussion ID to the view
+            // Display the discussion page 
+            return View("ViewDiscussion", chatID); 
         }
 
-
+        /// <summary>
+        /// Retrieves all messages for a group chat 
+        /// </summary>
+        /// <param name="discussionId"> The chat id </param>
+        /// <returns> List of messages </returns>
 
 
         [HttpGet("/Events/Discussions/Messages/{discussionId}")]
         public IActionResult GetMessages(int discussionId)
         {
+            // Search for the messages held within a chat using the database 
             var messages = _context.Messages
                 .Where(m => m.ChatID == discussionId)
                 .Select(m => new
                 {
+                    // Message id 
                     m.MessageID,
+                    // Content in message 
                     m.Content,
+                    // Time of message 
                     m.Timestamp,
-                    SenderFirstName = m.Sender.firstName, // Assuming Sender has FirstName property
-                    SenderLastName = m.Sender.lastName,  // Assuming Sender has LastName property
+                    // Sender name 
+                    SenderFirstName = m.Sender.firstName, 
+                    SenderLastName = m.Sender.lastName,
+                    // Sender id
                     m.SenderID
                 })
+                // Organize messages by time they were sent 
                 .OrderBy(m => m.Timestamp)
                 .ToList();
-
+            // Handle case where no messages are found 
             if (!messages.Any())
             {
                 return NotFound("No messages found for this discussion.");
             }
-
+            // Return the messages as a JSON
             return Ok(messages);
         }
 
-
+        /// <summary>
+        /// Send a message to a discussion
+        /// </summary>
+        /// <param name="messageDto"> Holds the details of a message</param>
+        /// <returns> Indication if message was sent</returns>
         [HttpPost("/Events/Discussions/SendMessage")]
         public IActionResult SendMessage([FromBody] MessageDto messageDto)
         {
+            // Log message received 
             _logger.LogInformation($"Received send message request: {System.Text.Json.JsonSerializer.Serialize(messageDto)}");
-
+            // Handle case where the message is empty
             if (string.IsNullOrWhiteSpace(messageDto.Content))
             {
                 return BadRequest("Message content cannot be empty.");
             }
-
+            // Validate discussion id received 
             if (messageDto.DiscussionId <= 0)
             {
                 _logger.LogWarning("Invalid discussion ID.");
                 return BadRequest("Invalid discussion ID.");
             }
-
+            // Check if group chat/discussion exists using chat database
             var discussionExists = _context.Chats.Any(c => c.ChatID == messageDto.DiscussionId);
+            // Handle case where the chat does not exist 
             if (!discussionExists)
             {
                 _logger.LogWarning($"Discussion with ID {messageDto.DiscussionId} not found.");
                 return NotFound($"Discussion with ID {messageDto.DiscussionId} not found.");
             }
-
+            // Message object 
             var message = new Message
             {
-                ChatID = messageDto.DiscussionId, // Map ChatID from MessageDto
+                // Relate message to a chat id 
+                ChatID = messageDto.DiscussionId,
+                // Set the id of the sender
                 SenderID = messageDto.SenderId,
+                // Set the message content
                 Content = messageDto.Content,
+                // Set the message time 
                 Timestamp = DateTime.UtcNow
             };
-
+            // Add message to message database
             _context.Messages.Add(message);
+            // Save databasea changes 
             _context.SaveChanges();
 
             _logger.LogInformation($"Message sent successfully with ID {message.MessageID}");
@@ -362,7 +453,9 @@ namespace Senior_Project.Controllers
         public int UserId { get; set; }
     }
 
-    // Data Transfer Object for receiving event data
+    /// <summary>
+    /// Holds the details of an event 
+    /// </summary>
     public class EventDto
     {
         public int EventId { get; set; }
@@ -374,14 +467,18 @@ namespace Senior_Project.Controllers
         public bool IsPublic { get; set; }
         public List<ImageDto> Images { get; set; }
     }
-
+    /// <summary>
+    /// Holds the image related details 
+    /// </summary>
     public class ImageDto
     {
         public string Url { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
     }
-
+    /// <summary>
+    /// Holds message details 
+    /// </summary>
     public class MessageDto
     {
         public int DiscussionId { get; set; }

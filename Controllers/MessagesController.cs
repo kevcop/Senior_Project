@@ -12,13 +12,25 @@ namespace Senior_Project.Controllers
 {
     public class MessagesController : Controller
     {
+        // Database variable for databases
         private readonly NewContext2 _context;
+        // Variable for debugging issues
         private readonly ILogger<MessagesController> _logger;
+        // Provides access to signalR hub 
         private readonly IHubContext<UserMessaging> _hubContext;
+        // // HTTP context
         private readonly IHttpContextAccessor _contextAccessor;
 
+        /// <summary>
+        /// Initializes instance of the controller
+        /// </summary>
+        /// <param name="context"> Database context variable used for database</param>
+        /// <param name="logger">Used for debugging</param>
+        /// <param name="hubContext"> SignalR hub accessor</param>
+        /// <param name="contextAccessor">TTP Context accessor for session management</param>
         public MessagesController(NewContext2 context, ILogger<MessagesController> logger, IHubContext<UserMessaging> hubContext, IHttpContextAccessor contextAccessor)
         {
+            // Variable initialization
             _context = context;
             _logger = logger;
             _hubContext = hubContext;
@@ -26,50 +38,55 @@ namespace Senior_Project.Controllers
         }
 
 
-        // POST: Send a message
+        /// <summary>
+        /// Sends a message to a chat
+        /// </summary>
+        /// <param name="request"> Holds the message details</param>
+        /// <returns> Code to indicate if message was sent or if error occured </returns>
         [HttpPost("/Messages/Send")]
         public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
         {
-            // Fetch userId from SignalR's mapping
+            // Get the connection id of a user's session. Each user will have a dedicated connection to the hub to prevent overlapping
             var connectionId = _contextAccessor.HttpContext.Request.Headers["ConnectionId"].ToString();
+            // Get the user id using connection id 
             var userId = UserMessaging.GetUserId(connectionId); // Use the mapping from the hub
-
+            // Handle case where is not found
             if (userId == null)
             {
                 _logger.LogWarning("User is not authenticated or ConnectionId is missing.");
                 return Unauthorized("User is not authenticated.");
             }
-
-            _logger.LogInformation($"User ID {userId} retrieved from ConnectionId {connectionId}.");
-
+            // Handle case where message is empty
             if (string.IsNullOrWhiteSpace(request.Content))
             {
                 return BadRequest("Message content cannot be empty.");
             }
-
+            // Ensure valid chat id 
             if (request.ChatId <= 0)
             {
                 return BadRequest("Invalid ChatID.");
             }
 
-            // Fetch participants for the chat
+            // Get the participants of a chat
             var participants = _context.ChatParticipants
                 .Where(cp => cp.ChatID == request.ChatId)
                 .Select(cp => cp.UserID)
                 .ToList();
-
+            // Log the partcipants of the chat 
             _logger.LogInformation($"Participants for ChatID {request.ChatId}: {string.Join(", ", participants)}");
-
+            // Check if the sender is part of the chat 
             if (!participants.Contains(userId.Value))
             {
+                // Log error
                 _logger.LogWarning($"Sender ID {userId} is not a participant in ChatID {request.ChatId}");
                 return BadRequest("Sender is not a participant in this chat.");
             }
+            // Get the sender name
             var senderName = _context.Register
     .Where(u => u.Id == userId.Value)
     .Select(u => u.firstName)
     .FirstOrDefault();
-            // Add the message to the database
+            // Create new message object 
             var message = new Message
             {
                 ChatID = request.ChatId,
@@ -77,29 +94,35 @@ namespace Senior_Project.Controllers
                 Content = request.Content,
                 Timestamp = DateTime.UtcNow
             };
-
+            // Add message to the database
             _context.Messages.Add(message);
+            // Save changes to database
             await _context.SaveChangesAsync();
-
+            // Log message id 
             _logger.LogInformation($"Message saved successfully with ID {message.MessageID}.");
 
-            // Broadcast the message via SignalR
+            // Display the message to all chat particpants 
             await _hubContext.Clients.Group(request.ChatId.ToString())
                 .SendAsync("ReceiveMessage", request.ChatId, senderName, request.Content);
 
             return Ok(new { message.MessageID, message.ChatID, message.Content, message.Timestamp });
         }
 
+        /// <summary>
+        /// Retrieves all messages for a chat 
+        /// </summary>
+        /// <param name="chatId"> The id of the chat to retrieve the messages from </param>
+        /// <returns> JSON format of messages </returns>
 
-
-        // GET: Fetch all messages for a chat
         [HttpGet("/Messages/GetMessages")]
         public IActionResult GetMessages(int chatId)
         {
+            // Check the chat id passed
             _logger.LogInformation($"Fetching messages for ChatID={chatId}");
 
             try
             {
+                // Query database to return all messages for the chat id 
                 var messages = _context.Messages
                     .Where(m => m.ChatID == chatId)
                     .OrderBy(m => m.Timestamp)
@@ -112,10 +135,12 @@ namespace Senior_Project.Controllers
                         SenderName = m.Sender.firstName // Include sender's full name
                     })
                     .ToList();
-
+                // Log number of messages for chat id 
                 _logger.LogInformation($"Retrieved {messages.Count} messages for ChatID={chatId}.");
+                // Return all messages in JSON format 
                 return Json(messages);
             }
+            // Error handling 
             catch (Exception ex)
             {
                 _logger.LogError($"Error fetching messages: {ex.Message}", ex);
@@ -123,36 +148,37 @@ namespace Senior_Project.Controllers
             }
         }
 
-
-
-        // GET: Fetch or create chat for two users
+        /// <summary>
+        /// Retrieves an existing chat or creates one between two users 
+        /// </summary>
+        /// <param name="userId1"> The id of the first user</param>
+        /// <param name="userId2"> The id of the second user </param>
+        /// <returns> JSON response holding the chat details </returns>
         [HttpGet("/Messages/GetOrCreateChat")]
         public IActionResult GetOrCreateChat(int userId1, int userId2)
         {
+            // Ensure the two correct users are in the chat 
             _logger.LogInformation($"Fetching or creating chat between UserID1={userId1} and UserID2={userId2}");
 
             try
             {
+                // Search for chat between users using their ids 
                 var chat = _context.Chats
                     .Include(c => c.Participants)
-                    .ThenInclude(p => p.User) // Ensure the User navigation property is loaded
+                    .ThenInclude(p => p.User) 
+                    // Checking to ensure chat is between two users and not a group chat 
                     .FirstOrDefault(c => c.Participants.Count == 2 &&
                                          c.Participants.Any(p => p.UserID == userId1) &&
                                          c.Participants.Any(p => p.UserID == userId2));
-
+                // Handle case where chat does not exist, create a chat
                 if (chat == null)
                 {
-                    // Create a new chat if it doesn't exist
+                    // Get the users to add to the chat 
                     var user1 = _context.Register.Find(userId1);
                     var user2 = _context.Register.Find(userId2);
-
-                    if (user1 == null || user2 == null)
-                    {
-                        _logger.LogWarning($"Invalid UserID1 ({userId1}) or UserID2 ({userId2}).");
-                        return BadRequest("Invalid UserID1 or UserID2.");
-                    }
-
+                    // Make chat name usernames of two users
                     var chatName = $"{user1.username} & {user2.username}";
+                    // Create new chat entry for database
                     chat = new Chat
                     {
                         ChatName = chatName,
@@ -163,22 +189,25 @@ namespace Senior_Project.Controllers
                     new ChatParticipant { UserID = userId2 }
                 }
                     };
-
+                    // Add chat to database
                     _context.Chats.Add(chat);
+                    // Save changes 
                     _context.SaveChanges();
-
+                    // Log what was just added 
                     _logger.LogInformation($"Created a new chat with ID {chat.ChatID} between UserID1={userId1} and UserID2={userId2}.");
                 }
+                // Case where chat already exists 
                 else
                 {
+
                     _logger.LogInformation($"Found existing chat with ID {chat.ChatID} between UserID1={userId1} and UserID2={userId2}.");
                 }
 
-                // **Notify the SignalR hub to join the group**
+                // Make users join the group chat using SignalR
                 _hubContext.Clients.User(userId1.ToString()).SendAsync("JoinGroup", chat.ChatID);
                 _hubContext.Clients.User(userId2.ToString()).SendAsync("JoinGroup", chat.ChatID);
 
-                // Return a simplified response
+                // Extract chat details 
                 var chatResponse = new
                 {
                     chat.ChatID,
@@ -189,24 +218,30 @@ namespace Senior_Project.Controllers
                         Username = p.User?.username ?? "Unknown"
                     })
                 };
-
+                // Return JSON format of chat details 
                 return Json(chatResponse);
             }
+            // Error handle
             catch (Exception ex)
             {
                 _logger.LogError($"Error in GetOrCreateChat: {ex.Message}", ex);
                 return StatusCode(500, "An error occurred while fetching or creating the chat.");
             }
         }
-
+        /// <summary>
+        /// Allows a user to join a group chat 
+        /// </summary>
+        /// <param name="chatId"> ID of the chat to join </param>
+        /// <returns>HTTP codes indicating if a join was succesful or if an error occured </returns>
         [HttpPost("/Messages/JoinGroup")]
         public async Task<IActionResult> JoinGroup([FromQuery] int chatId)
         {
             try
             {
+                // Log chat to join 
                 _logger.LogInformation($"Attempting to join ChatID {chatId}.");
 
-                // Verify the chat exists
+                // Check the chat exists
                 var chatExists = _context.Chats.Any(c => c.ChatID == chatId);
                 if (!chatExists)
                 {
@@ -214,90 +249,71 @@ namespace Senior_Project.Controllers
                     return NotFound("Chat not found.");
                 }
 
-                // Retrieve the UserID from the session
+                // Get the userid from the session
                 var userId = _contextAccessor.HttpContext.Session.GetInt32("UserId");
+                // Handle case where the user is not logged in 
                 if (userId == null || userId <= 0)
                 {
                     _logger.LogWarning("User is not authenticated or UserId is missing in the session.");
                     return Unauthorized("User is not authenticated.");
                 }
-
+                // Log user id 
                 _logger.LogInformation($"UserID {userId} retrieved from session.");
 
                 // Check if the user is already a participant in the chat
                 var isAlreadyParticipant = _context.ChatParticipants
                     .Any(cp => cp.ChatID == chatId && cp.UserID == userId);
 
+                // Handle case where the user is not apart of the chat 
                 if (!isAlreadyParticipant)
                 {
+                    // Log user id being added to chat 
                     _logger.LogInformation($"User {userId} is not a participant in ChatID {chatId}. Adding to ChatParticipants...");
 
-                    // Add the user to the chat participants
+                    // Details needed for user to be added to database
                     var chatParticipant = new ChatParticipant
                     {
                         ChatID = chatId,
                         UserID = userId.Value,
-                        IsAdmin = false, // Default to non-admin; adjust if needed
+                        IsAdmin = false, 
                         LastReadMessageDate = DateTime.UtcNow
                     };
-
+                    // Add to database 
                     _context.ChatParticipants.Add(chatParticipant);
-
-                    try
-                    {
-                        await _context.SaveChangesAsync();
-                        _logger.LogInformation($"User {userId} successfully added to ChatParticipants for ChatID {chatId}.");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError($"Error saving ChatParticipant: {ex.Message}");
-                        return StatusCode(500, "An error occurred while saving the ChatParticipant.");
-                    }
+                    // Save changes to database
+                    await _context.SaveChangesAsync();
                 }
                 else
                 {
+                    // Log that user is already in caht 
                     _logger.LogInformation($"User {userId} is already a participant in ChatID {chatId}.");
-                }
-
-                // Notify other clients in the group about the new participant
-                try
-                {
-                    await _hubContext.Clients.Group(chatId.ToString()).SendAsync("UserJoined", chatId, userId);
-                    _logger.LogInformation($"UserJoined notification sent for ChatID {chatId} and UserID {userId}.");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Error notifying other clients about the new participant: {ex.Message}");
-                    return StatusCode(500, "An error occurred while notifying the group.");
                 }
 
                 return Ok();
             }
+            // Error handling
             catch (Exception ex)
             {
                 _logger.LogError($"Unexpected error in JoinGroup: {ex.Message}");
                 return StatusCode(500, "An unexpected error occurred while joining the group.");
             }
         }
-
-
-
-
-
-
-
     }
-
+    /// <summary>
+    /// Holds message details
+    /// </summary>
     public class SendMessageRequest
     {
-        public int ChatId { get; set; } // Existing chat IDs
+        public int ChatId { get; set; } 
         public int SenderId { get; set; }
         public string Content { get; set; }
     }
-
+    /// <summary>
+    /// Holds id of chat 
+    /// </summary>
     public class JoinGroupRequest
     {
-        public int ChatId { get; set; } // Chat ID the user wants to join
+        public int ChatId { get; set; }
     }
 
 }

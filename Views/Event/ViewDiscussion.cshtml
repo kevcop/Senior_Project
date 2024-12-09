@@ -1,15 +1,19 @@
 ﻿@model int
-
+<!-- Link to the CSS stylesheet -->
 <link href="~/css/StyleSheet.css" rel="stylesheet" type="text/css" />
 
 <div>
+    <!-- Header section -->
     <h1>Discussion Messages</h1>
+    <!-- Messages will be displayed here -->
     <div id="messages">
-        <!-- Messages will be loaded dynamically -->
     </div>
     <hr />
+    <!-- Form for sending a message -->
     <form id="sendMessageForm">
+        <!-- Area where the user will type their message -->
         <textarea id="messageContent" rows="4" placeholder="Type your message..." required></textarea>
+        <!-- Send message button-->
         <button type="submit">Send</button>
     </form>
 </div>
@@ -18,122 +22,196 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.2/signalr.min.js"></script>
 
     <script>
+        // Get the current user id from the controller 
         const currentUserId = @ViewBag.CurrentUserId;
-        const chatId = @Model; // ChatID passed from the backend
+        // ChatId from the controller
+        const chatId = @Model; 
 
         // Log the current user ID
         console.log(`Current User ID: ${currentUserId}`);
 
         // Establish SignalR connection
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/userMessaging") // SignalR endpoint
+        // Signal R endpoint
+            .withUrl("/userMessaging") 
             .build();
 
-        // Start the SignalR connection and join the group
+        // Start the SignalR connection
         connection.start()
             .then(() => {
                 console.log("SignalR connection established.");
+                // Join the group chat 
                 connection.invoke("JoinGroup", chatId.toString())
                     .then(() => console.log(`Successfully joined group for Chat ID: ${chatId}`))
                     .catch(err => console.error("Error joining group:", err));
             })
             .catch(err => console.error("Error establishing SignalR connection:", err));
 
-        // Function to load messages from the server
+/*
+loadMessages()
+
+NAME
+
+        loadMessages - Displays messages 
+
+SYNOPSIS
+
+        async function loadMessages();
+
+DESCRIPTION
+        Using the chat id, the function will send a GET request to the backend to retrieve the messages
+        related to the chat
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 11:40 PM
+
+*/
+/**/
         async function loadMessages() {
             try {
+                // Log chat id
                 console.log(`Loading messages for Chat ID: ${chatId}`);
+                // Send request to fetch messages for the chat id 
                 const response = await fetch(`/Messages/GetMessages?chatId=${chatId}`);
+                // Area for messages 
                 const messagesDiv = document.getElementById("messages");
-
+                //Parse response if successful
                 if (response.ok) {
+                    // Retrieve the response in JSON format
                     const messages = await response.json();
                     console.log("Fetched messages:", messages);
-
-                    messagesDiv.innerHTML = ""; // Clear existing messages
-
+                    // Clear existing messages
+                    messagesDiv.innerHTML = "";
+                    // Iterate through each message, providing default values if needed  
                     messages.forEach(message => {
                         const senderName = message.senderName || "Unknown";
                         const messageContent = message.content || "No content provided";
+                        // Set the date for the message
                         const formattedDate = new Date(message.timestamp).toLocaleString();
-
+                        // Create a separate section for each message 
                         const messageElement = document.createElement("div");
+                        // Add styling 
                         messageElement.classList.add("message");
-
+                        // Display of a message
                         messageElement.innerHTML = `
                                     <p><strong>${senderName}</strong> <span class="timestamp">(${formattedDate})</span>:</p>
                                     <p>${messageContent}</p>
                                     <hr />
                                 `;
-
+                        // Add the message to the section 
                         messagesDiv.appendChild(messageElement);
                     });
 
                     // Scroll to the bottom of the messages
                     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                    // Handle case where response fails, debug 
                 } else {
                     console.error("Failed to fetch messages. Status:", response.statusText);
                     messagesDiv.innerHTML = "<p>No messages found.</p>";
                 }
+                // Error handle for any other errors
             } catch (error) {
                 console.error("Error loading messages:", error);
-                document.getElementById("messages").innerHTML =
-                    "<p>Error loading messages. Please try again later.</p>";
             }
         }
 
-        // Function to send a message
+        /*
+sendMessage(event)
+
+NAME
+
+        sendMessage - Send a message to a discussion
+
+SYNOPSIS
+
+        async function sendMessage(Event event);
+            event  --> The event being referred to 
+
+DESCRIPTION
+        This function allows user to send a message to a group discussion.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 11:49 PM
+
+*/
+/**/
         async function sendMessage(event) {
             event.preventDefault();
-
+            // Get message being sent 
             const messageContent = document.getElementById("messageContent").value.trim();
+            // Check for an empty message
             if (!messageContent) {
                 alert("Message content cannot be empty.");
                 return;
             }
-
+            // Details to be sent to the backend
             const payload = {
-                chatId: chatId, // Use the correct chat ID
-                senderId: currentUserId, // Ensure currentUserId is defined and accessible
+                chatId: chatId, 
+                senderId: currentUserId, 
                 content: messageContent,
             };
-
+            // Log message request being sent 
             console.log("Attempting to send message with payload:", payload);
 
             try {
+                // Send a POST request to the backend to send message
                 const response = await fetch(`/Messages/Send`, {
                     method: "POST",
                     headers: {
+                        // JSON content type
                         "Content-Type": "application/json",
-                        "ConnectionId": connection.connectionId // Include SignalR's connectionId
+                        // Signal R connection id 
+                        "ConnectionId": connection.connectionId 
                     },
+                    // Convert to JSON string
                     body: JSON.stringify(payload),
                 });
-
+                // If message is sent
                 if (response.ok) {
+                    // Clear message content area for a new message to be sent 
                     document.getElementById("messageContent").value = ""; // Clear the input field
                 } else {
+                    // Log error if message fails to send
                     const errorMessage = await response.text();
-                    console.error("Failed to send message. Server response:", errorMessage);
+                    console.error("Failed to send message. Backend response:", errorMessage);
                     alert("Failed to send message: " + errorMessage);
                 }
+                // Handle unexpected errors 
             } catch (error) {
                 console.error("Error sending message:", error);
-                alert("Failed to send message. Please try again.");
             }
         }
 
-        // Real-time message reception
+        // Real-time messaging 
         connection.on("ReceiveMessage", (chatId, senderName, content) => {
+            // Create a section for the message
             const messagesDiv = document.getElementById("messages");
             const messageElement = document.createElement("div");
-
+            // Add styling
             messageElement.classList.add("message");
+            // How message should be displayed
             messageElement.innerHTML = `
                         <p><strong>${senderName}</strong>: ${content}</p>
                         <hr />
                     `;
-
+            // Add message to the caht 
             messagesDiv.appendChild(messageElement);
 
             // Scroll to the bottom of the messages
@@ -142,7 +220,9 @@
 
         // Event listeners
         document.addEventListener("DOMContentLoaded", () => {
+            // Load existing messages 
             loadMessages();
+            // Submit event listener
             document.getElementById("sendMessageForm").addEventListener("submit", sendMessage);
         });
     </script>

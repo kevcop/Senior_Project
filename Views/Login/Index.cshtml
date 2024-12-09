@@ -1,33 +1,48 @@
 ﻿@model Senior_Project.Models.Register
 
+<!-- Tab Title-->
 @{
     ViewData["Title"] = "Login";
 }
 <head>
+    <!-- Link to the external CSS stylesheet -->
     <link href="~/css/StyleSheet.css" rel="stylesheet" type="text/css" />
 </head>
+
+<!-- Page Title -->
 <h1>Login</h1>
+
 <body class="center">
+    <!-- Centered div for the login form -->
     <div class="center">
         <!-- Login Form -->
         <form asp-controller="Login" asp-action="Index" method="post">
+            <!-- Email Input Field -->
             <div>
                 <p><b>Email</b></p>
+                <!-- Bind emailAddress input to model -->
                 <input asp-for="emailAddress" />
+                <!-- Validate email field based on model -->
                 <span asp-validation-for="emailAddress"></span>
             </div>
 
+            <!-- Password Input Field -->
             <div>
                 <p><b>Password</b></p>
+                <!-- Bind password input to the model -->
                 <input asp-for="password" type="password" />
+                <!-- Validate password input based on model -->
                 <span asp-validation-for="password"></span>
             </div>
 
+            <!-- Submit Button -->
             <div>
+                <!-- Submit the login form -->
                 <input type="submit" value="Login" />
             </div>
         </form>
 
+        <!-- Link to the registration page for new users -->
         <p>
             <a asp-action="Register">Create New</a>
         </p>

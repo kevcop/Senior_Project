@@ -9,61 +9,78 @@ using Senior_Project.Data;
 using Senior_Project.Models;
 using System.Web;
 
-//FIX ROUTING 
-//NEXT TO DO: BUILD HOME PAGE AFTER A SUCCESSFUL LOGIN
-//ADDRESS ISSUE IN REGISTER FUNCTION!!
+
 namespace Senior_Project.Controllers
 {
+    /// <summary>
+    /// Controller used for handling login and registration of new users
+    /// </summary>
     public class Login : Controller
     {
+        // Database variable for accessing user and profile data 
         private readonly NewContext2 _context;
+        // HTTP context
         private readonly IHttpContextAccessor _contextAccessor;
+        // Variable for debugging issues
         private readonly ILogger<Login> _logger;
+        // Manages user session data
         private readonly ISession _session;
+
+        /// <summary>
+        /// Initialzes instance of login controller
+        /// </summary>
+        /// <param name="context"> Database context variable used for database</param>
+        /// <param name="logger">Used for debugging</param>
+        /// <param name="httpContextAccessor">HTTP Context accessor for session management</param>
         public Login(NewContext2 context, ILogger<Login> logger, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _logger = logger;
             _session = httpContextAccessor.HttpContext.Session;
         }
-
+        /// <summary>
+        /// Handles user login by searching database for inputted emailaddress and password 
+        /// </summary>
+        /// <param name="register"> Tracks the user credentials submitted through login form</param>
+        /// <returns> View page for login</returns>
         public IActionResult Index(Register register)
         {
-            // Validate user credentials
+            // Search for matching credentials in the database
             var user = _context.Register.SingleOrDefault(u => u.emailAddress == register.emailAddress && u.password == register.password);
 
-            // If user is found and credentials are valid
+            // If credentials match to a user in database
             if (user != null)
             {
-                // Set session value after successful login
-                HttpContext.Session.SetInt32("UserId", user.Id); // Save the UserId
+                // Set session values after successful login
+                HttpContext.Session.SetInt32("UserId", user.Id);
                 HttpContext.Session.SetString("Email", user.emailAddress);
 
 
-                // Optional: Debugging statement to confirm session is set
-                System.Diagnostics.Debug.WriteLine("Session set: UserId = " + HttpContext.Session.GetInt32("UserId"));
-                System.Diagnostics.Debug.WriteLine("Session set: " + HttpContext.Session.GetString("UserId"));
-
-
-                // Redirect to a different view upon successful login (for example, a dashboard)
+                // Redirect to the landing page 
                 return RedirectToAction("Index", "Landing");
             }
-
-            // If login fails, return to the login view with an error message
-            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+            // Display Login page
             return View();
         }
 
-
-        public IActionResult Register() { return View(); }
-        //CHECK THIS 
+        /// <summary>
+        /// Display registration page for new users
+        /// </summary>
+        /// <returns> The view file for registration</returns>
+        public IActionResult Register() 
+        { 
+            return View(); 
+        }
+        /// <summary>
+        /// Adds a new user to the register database and create a default profile 
+        /// </summary>
+        /// <param name="register"> Extract user details on registration form</param>
+        /// <returns> Login view page</returns>
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register([Bind("Id,firstName,lastName,emailAddress,phoneNumber,birthdate,username,password")] Register register)
         {
-            // Debugging: Log the input register object
-            System.Diagnostics.Debug.WriteLine($"Debug: Input - Username: {register.username}, Email: {register.emailAddress}");
 
             // Check if a user with the same username or email already exists
             var user = _context.Register.SingleOrDefault(u => u.username == register.username || u.emailAddress == register.emailAddress);
@@ -88,6 +105,7 @@ namespace Senior_Project.Controllers
             // Add user to the database and save changes
             try
             {
+                // Add the user to the database
                 _context.Add(register);
                 await _context.SaveChangesAsync();
 
@@ -97,19 +115,20 @@ namespace Senior_Project.Controllers
                 // Create a default profile for the new user
                 var profile = new Profile
                 {
-                    UserId = register.Id, // Use the newly created user's ID
-                    Bio = "Welcome to your profile!", // Default bio
-                    Interests = string.Empty, // Empty interests initially
-                    AttendingEvents = new List<int>(), // Empty event lists
-                    PastEvents = new List<int>() // Empty event lists
+                    UserId = register.Id, 
+                    Bio = "Welcome to your profile!", 
+                    Interests = string.Empty, 
+                    AttendingEvents = new List<int>(), 
+                    PastEvents = new List<int>() 
                 };
 
                 // Debugging: Log profile creation attempt
                 System.Diagnostics.Debug.WriteLine($"Debug: Creating profile for UserId: {profile.UserId}");
 
+                // Add users profile to the profile database
                 _context.Profiles.Add(profile);
                 await _context.SaveChangesAsync();
-
+                
                 // Debugging: Confirm profile creation
                 System.Diagnostics.Debug.WriteLine($"Debug: Profile created successfully for UserId: {profile.UserId}");
             }
@@ -119,12 +138,8 @@ namespace Senior_Project.Controllers
                 System.Diagnostics.Debug.WriteLine($"Error during registration or profile creation: {ex.Message}");
                 return StatusCode(500, "An error occurred during registration.");
             }
-
-            return RedirectToAction(nameof(Index)); // Redirect to the main page or login
+            // Redirect to the login page upon a successful registration
+            return RedirectToAction(nameof(Index));
         }
-
-
-
-
     }
 }
