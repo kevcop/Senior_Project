@@ -1,5 +1,4 @@
-﻿ORIGINAL
-@{
+﻿@{
     // Tab title
     ViewData["Title"] = "Landing";
 }
@@ -9,18 +8,32 @@
     <link href="~/css/StyleSheet.css" rel="stylesheet" type="text/css" />
 </head>
 
-<div>
+<div style="position: relative;">
     <!-- Link to the profile page -->
-    <a class href="/profile">Profile</a>
-     <!-- Search bar and button for users and events -->    
-    <div style="float: right;">
-     <!--Search bar-->
-    <input id="searchQuery" type="text" placeholder="Search for users or events...">
-    <!-- Search button -->
-    <button type="button" onclick="search()">Search</button>
+    <a href="/profile" style="position: absolute; left: 10px; top: 0;">Profile</a>
+
+    <!-- Search bar and button for users and events -->
+    <div style="position: absolute; right: 10px; top: 0;">
+        <input id="searchQuery" type="text" placeholder="Search for users or events...">
+        <button type="button" onclick="search()">Search</button>
+    </div>
 </div>
 
-</div>
+<!-- Section for popular upcoming events -->
+<section id="popular-events" style="text-align: center; margin-top: 40px;">
+    <h2>Popular Upcoming Events</h2>
+    <!-- Carousel style display for popular events -->
+    <div class="carousel-container" style="display: inline-block;">
+        <!-- Previous slide button -->
+        <a class="prev" onclick="prevSlide()">&#10094;</a>
+        <!-- Div for event slides -->
+        <div class="event-slides" id="popular-events-container"></div>
+        <!-- Next slide button -->
+        <a class="next" onclick="nextSlide()">&#10095;</a>
+    </div>
+</section>
+
+
 <!-- Handle displaying search results -->
 <div id="searchResults" style="margin-top: 20px; display: none;">
     <h2>Search Results</h2>
@@ -41,22 +54,10 @@
 </div>
 
 <!-- Page Header -->
-<h1 class="text-center">Landing page</h1>
 
 <!-- Section for popular upcoming events -->
-<section id="popular-events">
-    <h2 class="text-center">Popular Upcoming Events</h2>
-    <!-- Carousel style display for popular events -->
-    <div class="carousel-container">
-        <!-- Previous slide button -->
-        <a class="prev" onclick="prevSlide()">&#10094;</a>
-        <!-- Div for event slides -->
-        <div class="event-slides" id="popular-events-container"></div>
-        <!-- Next slide button -->
-        <a class="next" onclick="nextSlide()">&#10095;</a>
-    </div>
 
-</section>
+
 <!-- Section for local events -->
 <section id="local-events">
     <h2 class="text-center">Local Events Near You</h2>

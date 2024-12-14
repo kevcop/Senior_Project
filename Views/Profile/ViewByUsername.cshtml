@@ -106,7 +106,7 @@
         <input type="hidden" id="chatId">
         <input type="hidden" id="receiverId"> <!-- Ensure this input is present -->
         <div id="chatMessages" class="chat-messages">
-            <!-- Messages will be dynamically loaded here -->
+            <!-- Messages will be loaded here -->
         </div>
         <form id="chatForm" onsubmit="sendMessage(event)">
             <textarea id="chatInput" placeholder="Type your message here..." required></textarea>
@@ -132,42 +132,96 @@
     }
 
     .chat-modal-content {
-        background-color: #f9f9f9;
+        background-color: #f8f9fa; /* Subtle grey background for the modal */
         margin: 10% auto;
         padding: 20px;
-        border: 1px solid #ccc;
+        border: 1px solid #ced4da;
         border-radius: 10px;
         width: 50%;
         position: relative;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
     }
 
+        .chat-modal-content h2 {
+            font-size: 20px;
+            font-weight: bold;
+            color: #343a40; /* Darker shade for better visibility */
+            text-align: center;
+            margin-bottom: 20px;
+            margin-top: 0; /* Optional: to minimize the top margin */
+        }
+
+
     .close {
-        color: #aaa;
+        color: #6c757d; /* Muted color for close button */
         float: right;
         font-size: 28px;
         font-weight: bold;
         cursor: pointer;
+        transition: color 0.3s;
     }
+
+        .close:hover {
+            color: #000; /* Darker color on hover */
+        }
 
     .chat-messages {
         max-height: 300px;
-        overflow-y: scroll;
+        overflow-y: auto;
         margin-bottom: 20px;
-        border: 1px solid #ddd;
+        border: 1px solid #ced4da;
         padding: 10px;
-        background: #fff;
+        background: #ffffff; /* White background for the chat messages */
+        border-radius: 5px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        color: #343a40; /* Black color for the text */
     }
 
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background-color: #adb5bd; /* Grey scrollbar */
+            border-radius: 4px;
+        }
+
+            .chat-messages::-webkit-scrollbar-thumb:hover {
+                background-color: #6c757d; /* Darker grey on hover */
+            }
+
     #chatInput {
-        width: calc(100% - 100px);
+        width: calc(100% - 110px);
         padding: 10px;
         margin-right: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        font-size: 14px;
     }
+
+        #chatInput:focus {
+            outline: none;
+            border-color: #495057; /* Darker border on focus */
+        }
 
     #chatForm button {
         padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;
     }
+
+        #chatForm button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
 </style>
+
 
 <script>
 
@@ -203,44 +257,77 @@
 
 
 
-    // Open the chat modal
+   /*
+openChatModal(receiverId, receiverName)
+
+NAME
+
+        openChatModal - Opens the chat pop up for chatting with another user/ 
+
+SYNOPSIS
+
+        void openChatModal(int receiverId, string receiverName);
+
+            receiverId   --> The ID of the user to chat with.
+            receiverName --> The name of the user to chat with.
+
+DESCRIPTION
+
+        This function handles the process of opening a pop up window for chatting 
+        with another user. It validates the current user's ID and fetches or creates
+        a chat object from the backend. The function also a SignalR connection for 
+        real-time communication.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/10/2024 10:15 PM
+
+*/
     function openChatModal(receiverId, receiverName) {
+        // Log the user's id and name 
         console.log(`Attempting to open chat with Receiver ID: ${receiverId}, Receiver Name: ${receiverName}`);
 
         try {
-            console.log("Validating currentUserId...");
+            // Checking for a valid current user id 
             if (typeof currentUserId === 'undefined' || currentUserId === null || currentUserId === '') {
                 console.error("currentUserId is not defined or invalid. Ensure the user is logged in and currentUserId is set.");
-                alert("Failed to open chat. Current user ID is not set. Please log in or refresh the page.");
                 return;
             }
-            console.log(`Current User ID validated: ${currentUserId}`);
-
-            console.log("Calling GetOrCreateChat API...");
+            // Get a chat if it already exists or create one between the users
             fetch(`/Messages/GetOrCreateChat?userId1=${currentUserId}&userId2=${receiverId}`)
                 .then(response => {
-                    console.log(`GetOrCreateChat API response status: ${response.status}`);
+                    console.log(`GetOrCreateChat response status: ${response.status}`);
+                    // Error handling when backend fails 
                     if (!response.ok) {
                         console.error(`GetOrCreateChat API returned an error: ${response.statusText}`);
                         throw new Error(`Failed to fetch or create chat: ${response.statusText}`);
                     }
+                    // Backend response in JSON format 
                     return response.json();
                 })
                 .then(chat => {
-                    console.log("Processing chat object returned from API...");
+                    // Validate chat object from backend 
                     if (!chat || !chat.chatID) {
                         console.error("Chat object returned from API is invalid or missing chatID.");
-                        alert("Failed to create or fetch chat. Please try again.");
                         return;
                     }
-                    console.log(`Chat fetched/created successfully: Chat ID=${chat.chatID}`);
 
-                    // Set the receiver's name in the modal
+                    // Add the chat id and receiver name to the window 
                     const chatReceiverNameElement = document.getElementById('chatReceiverName');
+                    // Handle when receiver name is not populated 
                     if (!chatReceiverNameElement) {
                         console.error("Receiver name element is missing in the modal.");
                         return;
                     }
+                    // Set the receiver name
                     chatReceiverNameElement.innerText = receiverName;
 
                     // Set the Chat ID in the hidden input field
@@ -259,7 +346,7 @@
                     }
                     receiverIdField.value = receiverId;
 
-                    // Show the chat modal
+                    // Display the chat window 
                     const chatModal = document.getElementById('chatModal');
                     if (!chatModal) {
                         console.error("Chat modal element is missing.");
@@ -267,111 +354,167 @@
                     }
                     chatModal.style.display = 'block';
 
-                    console.log("Chat modal attributes set and opened successfully.");
                     console.log(`Chat modal attributes: Chat ID=${chat.chatID}, Receiver Name=${receiverName}`);
 
                     // Load conversation
-                    console.log("Fetching messages for the chat...");
                     fetchMessages(chat.chatID);
-                    console.log("Here is the chatid");
-                    console.log(chat.chatID);
+ 
 
-                    // **Override ChatID for Hardcoded Test**
-                    const testChatId = chat.chatID.toString(); // Hardcoded testChatId
-                    console.log(`Overriding ChatID with hardcoded value: ${testChatId}`);
+                    const testChatId = chat.chatID.toString(); 
 
-                    // **Check connection state before starting**
+                    // SignalR connection 
                     if (connection.state === "Disconnected") {
                         console.log("SignalR connection is in 'Disconnected' state. Starting connection...");
+                        // Start the connection when connection is disconnected
                         connection.start()
                             .then(() => {
-                                console.log("SignalR connection established. Joining SignalR group...");
-                                return connection.invoke("JoinGroup", testChatId); // Use hardcoded ChatID
+                                console.log("SignalR connection established");
+                                // Join group 
+                                return connection.invoke("JoinGroup", testChatId); 
                             })
                             .then(() => console.log(`Successfully joined SignalR group for ChatID=${testChatId}`))
                             .catch(err => console.error("Error joining SignalR group:", err));
                     } else {
+                        // If connection is already started 
                         console.log("SignalR connection is already active. Joining SignalR group...");
-                        connection.invoke("JoinGroup", testChatId) // Use hardcoded ChatID
+                        // Join the chat 
+                        connection.invoke("JoinGroup", testChatId) 
                             .then(() => console.log(`Successfully joined SignalR group for ChatID=${testChatId}`))
                             .catch(err => console.error("Error joining SignalR group:", err));
                     }
                 })
+                // Handle errors during chat creation
                 .catch(error => {
                     console.error("Error fetching or creating chat:", error);
-                    alert("Failed to open chat. Please try again.");
                 });
+                // Handle all other issues 
         } catch (error) {
-            console.error("Error opening chat modal:", error);
+            console.error( rror);
         }
     }
 
 
+    /*
+closeChatModal()
 
+NAME
 
+        closeChatModal - Closes the chat window 
 
+SYNOPSIS
 
+        void closeChatModal();
 
+DESCRIPTION
 
+        This function hides the chat window and clears the contents for future use.
 
-    // Close the chat modal
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/10/2024 10:28 PM
+
+*/
     function closeChatModal() {
         console.log("Closing chat modal...");
         try {
+            // Hide the chat window 
             document.getElementById('chatModal').style.display = 'none';
+            // Delete the content 
             document.getElementById('chatMessages').innerHTML = '';
-            console.log("Chat modal closed.");
+            // Error handling when window is not closed 
         } catch (error) {
             console.error("Error closing chat modal:", error);
         }
     }
 
-    // Fetch messages
-    // Fetch messages
-    // Fetch messages
-    function fetchMessages(chatId) {
-        console.log(`Fetching messages for Chat ID: ${chatId}`);
+    /*
+fetchMessages(chatId)
 
+NAME
+
+        fetchMessages - Retrieves and displays messages for a specific chat.
+
+SYNOPSIS
+
+        void fetchMessages(int chatId);
+
+            chatId --> The id of chat to retrieve messages from 
+
+DESCRIPTION
+
+        This function sends a GET request to the backend to retrieve and display messages 
+        for a specific based on the provided chat id . 
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/10/2024 10:31 PM
+
+*/
+
+    function fetchMessages(chatId) {
+        // Log the chat id 
+        console.log(`Fetching messages for Chat ID: ${chatId}`);
+        // Make a GET request to the backend to retrieve the messages 
         fetch(`/Messages/GetMessages?chatId=${chatId}`)
             .then(response => {
-                console.log("Fetch response received:", response);
+                console.log("Response received:", response);
+                // Error handling when backend fails 
                 if (!response.ok) {
                     throw new Error(`Failed to fetch messages: ${response.statusText}`);
                 }
+                // Return the chats as a JSON 
                 return response.json();
             })
             .then(data => {
-                // Debugging output
+                // Verify messages 
                 console.log("Messages retrieved:", data);
 
-                // Check if messages is an array
+                // Checking for array 
                 const messages = Array.isArray(data) ? data : data.messages;
-
+                // Error handling when messages are not in array 
                 if (!Array.isArray(messages)) {
                     console.error("Invalid messages format:", messages);
-                    alert("Failed to load messages. Please try again.");
                     return;
                 }
-
+                // Section to display messages
                 const chatMessages = document.getElementById('chatMessages');
-                chatMessages.innerHTML = ''; // Clear old messages
-
+                // Clear previous messages 
+                chatMessages.innerHTML = ''; 
+                // Iterate through the messages 
                 messages.forEach(msg => {
+                    // Create a div for each message 
                     const messageElement = document.createElement('div');
 
                     // Extract sender name from the message
-                    const senderName = msg.senderName || "Unknown"; // Use "Unknown" if senderName is undefined
-                    const messageContent = msg.content || ""; // Use an empty string if content is missing
+                    const senderName = msg.senderName || "Unknown"; 
+                    // Extract message
+                    const messageContent = msg.content || ""; 
 
-                    // Add appropriate styling for sent or received messages
+                    // Add styling
                     messageElement.className = msg.senderID === currentUserId ? 'sent-message' : 'received-message';
                     messageElement.innerText = `${senderName}: ${messageContent}`;
-
+                    // Add the message to the chat 
                     chatMessages.appendChild(messageElement);
                 });
 
-                console.log("Messages displayed in the chat modal.");
             })
+            // Error handling for when fetching messages fails 
             .catch(error => {
                 console.error("Error fetching messages:", error);
                 alert("Failed to load messages. Please try again.");
@@ -382,103 +525,337 @@
 
 
 
-    // Send message
+    /*
+sendMessage(event)
+
+NAME
+
+        sendMessage - Sends a message to the chat
+
+SYNOPSIS
+
+        void sendMessage(Event event);
+
+            event --> Event object when message is sent 
+DESCRIPTION
+
+        This function handles sending a message from the user to the backend server.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/10/2024 10:40 PM
+
+*/
     function sendMessage(event) {
         event.preventDefault();
-
+        // Get chat id
         const chatId = document.getElementById('chatId').value;
+        // Get message content 
         const content = document.getElementById('chatInput').value.trim();
-
+        // Handle case where message input is empty 
         if (!content) {
             alert("Message content cannot be empty.");
             return;
         }
-
+        // Data to send to the backend 
         const payload = {
             chatId: parseInt(chatId), // Use only ChatId and Content
             content: content,
         };
 
         console.log("Payload being sent to the server:", payload);
-
+        // Send a POST request using the data 
         fetch('/Messages/Send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'ConnectionId': connection.connectionId, // Pass SignalR's ConnectionId in the headers
+                // SignalR connection
+                'ConnectionId': connection.connectionId, 
             },
+            // Convert data being sent to JSON 
             body: JSON.stringify(payload),
         })
+            // Handle backend response errors 
             .then(response => {
                 if (!response.ok) {
                     return response.text().then(errorMessage => {
                         throw new Error(errorMessage);
                     });
                 }
+                // Convert Response to json 
                 return response.json();
             })
             .then(() => {
                 console.log("Message sent successfully.");
-                document.getElementById('chatInput').value = ''; // Clear input field
+                // Clear message input field for another message 
+                document.getElementById('chatInput').value = ''; 
             })
+            // Handle all other errors 
             .catch(error => {
                 console.error("Error sending message:", error);
                 alert("Failed to send message. Please try again.");
             });
     }
-
+    // Index for attending slides 
     let attendingIndex = 0;
+    // Index for past slides 
     let pastIndex = 0;
 
     document.addEventListener("DOMContentLoaded", () => {
         initializeSlides("attending-events-container");
         initializeSlides("past-events-container");
     });
+    /*
+initializeSlides(containerId)
 
+NAME
+
+    initializeSlides - Initializes the slideshow display
+
+SYNOPSIS
+
+    void initializeSlides(string containerId);
+        containerId --> Which section to populate 
+
+DESCRIPTION
+
+    This function sets up the initial state for the slideshow containers. It retrieves all
+    elements with the class "event-item" inside the specified container, hides all of
+    them, and displays the first slide. 
+
+RETURNS
+
+    None.
+
+AUTHOR
+
+    Kevin Chicas
+
+DATE
+
+   12/10/2024 10:47 PM
+*/
     function initializeSlides(containerId) {
+        // Get the container 
         const container = document.getElementById(containerId);
-        if (!container) return;
-
+        // Get all event items 
         const slides = container.getElementsByClassName("event-item");
+        // Handle case where there are no slides 
         if (slides.length === 0) return;
-
+        // Iterate through all slides and set display to none to hide them 
         for (let i = 0; i < slides.length; i++) {
             slides[i].style.display = "none";
         }
+        // Display the first slide 
         slides[0].style.display = "block";
     }
+        /**/
+/*
+prevSlideAttending()
+
+NAME
+
+        prevSlideAttending - Move to the previous slide 
+
+SYNOPSIS
+
+        void prevSlideAttending();
+
+DESCRIPTION
+        Decrements the attendingIndex global variable which is used to track 
+        the current slide for the attending section. Will decrement to show the previous slide. Calls the changeSlide
+        function with the updated index and attending events section.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 10:49 PM
+
+*/
+/**/
 
     function prevSlideAttending() {
+        // Decrement slide index 
         attendingIndex--;
+        // Call slide moving function with updated index
         changeSlide(attendingIndex, "attending-events-container");
     }
+        /**/
+/*
+nextSlideAttending()
 
+NAME
+
+        nextSlideAttending - Move to the following slide 
+
+SYNOPSIS
+
+        void nextSlideAttending();
+
+DESCRIPTION
+        Increments the attendingIndex global variable which is used to track 
+        the current slide for the attending section. Will increment to show the following slide. Calls the changeSlide
+        function with the updated index and attending events section.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 10:49 PM
+
+*/
+/**/
     function nextSlideAttending() {
+        // Increment slide index
         attendingIndex++;
+        // Call slide moving function with updated index
         changeSlide(attendingIndex, "attending-events-container");
     }
+    /*
+prevSlidePast()
 
+NAME
+
+        prevSlidePast - Move to the previous slide 
+
+SYNOPSIS
+
+        void prevSlidePast();
+
+DESCRIPTION
+        Decrements the pastIndex global variable which is used to track 
+        the current slide for the past attended section. Will decrement to show the previous slide. Calls the changeSlide
+        function with the updated index and past events section.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 10:50 PM
+
+*/
+/**/
     function prevSlidePast() {
+        // Decrement slide index
         pastIndex--;
+        // Call slide moving function with updated index
         changeSlide(pastIndex, "past-events-container");
     }
+        /*
+nextSlidePast()
+
+NAME
+
+        nextSlidePast - Move to the following slide 
+
+SYNOPSIS
+
+        void nextSlidePast();
+
+DESCRIPTION
+        Increments the pastIndex global variable which is used to track 
+        the current slide for the past attended section. Will increment to show the following slide. Calls the changeSlide
+        function with the updated index and past events section.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 10:50 PM
+
+*/
+/**/
 
     function nextSlidePast() {
+        // Increment slide index
         pastIndex++;
+        // Call slide moving function with updated index
         changeSlide(pastIndex, "past-events-container");
     }
 
+    
+    /*
+changeSlide(index, containerId)
+
+NAME
+
+        changeSlide - Change the currently displayed slide 
+
+SYNOPSIS
+
+        void changeSlide(int index, string containerId);
+            index       --> The index of slide to show 
+            containerId --> Section where the slide should be changed in 
+
+DESCRIPTION
+        This function updates the current slide to display the previous or following slide. 
+        If the requested index exceeds the the number of available slides, it loops back to the first slide. 
+        If the index is less than 0, it wraps around to the last slide. All slides are hidden ensuring only the desired
+        slide is shown. 
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 10:51 PM 
+
+*/
+
     function changeSlide(index, containerId) {
+        // Get the section to change the slide in  
         const container = document.getElementById(containerId);
+        // Get all the slides within the section
         const slides = container.getElementsByClassName("event-item");
+        // Exit function if there are no slides
         if (slides.length === 0) return;
-
+        // If index goes beyond slide count, loop back to the first slide
         if (index >= slides.length) index = 0;
+        // Handle case where index is less than 0 to go  to the last slide 
         if (index < 0) index = slides.length - 1;
-
+            // Do not show all slides
         for (let i = 0; i < slides.length; i++) {
             slides[i].style.display = "none";
         }
+            // Display the desired slide
         slides[index].style.display = "block";
     }
 

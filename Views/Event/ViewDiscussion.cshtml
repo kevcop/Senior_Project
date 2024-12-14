@@ -229,45 +229,105 @@ DATE
 }
 
 <style>
-    /* Message styles */
+    /* General Chat Styles */
+    #messages {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #ced4da; /* Updated border for a cleaner look */
+        padding: 15px;
+        max-height: 400px;
+        overflow-y: auto;
+        background-color: #ffffff; /* White background for chat messages */
+        border-radius: 10px; /* Rounded edges for the container */
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        color: #343a40; /* Dark text for messages */
+    }
+
+        #messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #messages::-webkit-scrollbar-thumb {
+            background-color: #adb5bd; /* Grey scrollbar */
+            border-radius: 4px;
+        }
+
+            #messages::-webkit-scrollbar-thumb:hover {
+                background-color: #6c757d; /* Darker grey on hover */
+            }
+
+    /* Message Styles */
     .message {
         margin-bottom: 15px;
         padding: 10px;
         border-radius: 10px;
+        max-width: 70%; /* Limit message bubble width */
+        line-height: 1.5;
+        font-size: 14px;
     }
 
+    /* Sent Message (Sender) */
     .sent-message {
-        background-color: #d1ffd1;
+        background-color: #007bff; /* Blue bubble for sender */
         align-self: flex-end;
+        color: #ffffff; /* White text */
+        text-align: right;
     }
 
+    /* Received Message */
     .received-message {
-        background-color: #d1e7ff;
+        background-color: #f1f1f1; /* Light grey bubble for receiver */
         align-self: flex-start;
+        color: #343a40; /* Dark text */
+        text-align: left;
     }
 
+    /* Timestamp */
     .timestamp {
         font-size: 0.85em;
         color: gray;
+        text-align: right; /* Align timestamp to the right */
+        margin-top: 5px;
     }
 
-    #messages {
+    /* Chat Input Section */
+    #sendMessageForm {
         display: flex;
-        flex-direction: column;
-        border: 1px solid #ddd;
-        padding: 15px;
-        max-height: 400px;
-        overflow-y: auto;
-        background-color: #f9f9f9;
+        margin-top: 10px;
+        align-items: center;
     }
 
-    #sendMessageForm textarea {
-        width: calc(100% - 90px);
-        padding: 10px;
-        margin-right: 10px;
-    }
+        #sendMessageForm textarea {
+            width: calc(100% - 110px); /* Adjusted width for proper alignment */
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 14px;
+            resize: none; /* Prevent resizing */
+        }
 
-    #sendMessageForm button {
-        padding: 10px 20px;
-    }
+            #sendMessageForm textarea:focus {
+                outline: none;
+                border-color: #495057; /* Darker border on focus */
+            }
+
+        /* Send Button */
+        #sendMessageForm button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+            #sendMessageForm button:hover {
+                background-color: #0056b3; /* Darker blue on hover */
+                transform: scale(1.05); /* Slight zoom on hover */
+            }
+
 </style>

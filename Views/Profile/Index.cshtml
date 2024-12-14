@@ -4,120 +4,133 @@
     ViewData["Title"] = "Profile";
 }
 
-<link href="~/css/StyleSheet.css" rel="stylesheet" type="text/css" />
-
-
 <head>
+    <!-- CSS Stylesheet -->
+    <link href="~/css/StyleSheet.css" rel="stylesheet" type="text/css" />
     <link href="~/css/styles.css" rel="stylesheet" type="text/css" />
 </head>
 
-<div class="profile-container">
-    <h1 class="text-center">Your Profile</h1>
+<body>
+    <div class="profile-container">
+        <h1 class="text-center">Your Profile</h1>
 
-    <!-- User Bio -->
-    <section class="profile-section">
-        <h2>Bio</h2>
-        <textarea asp-for="Bio" rows="4" placeholder="Tell us about yourself..." class="profile-bio"></textarea>
-        <button class="btn btn-primary" onclick="saveBio()">Save Bio</button>
-    </section>
+        <!-- User Bio Section -->
+        <section class="profile-section">
+            <h2>Bio</h2>
+            
+            <textarea asp-for="Bio" rows="4" placeholder="Tell us about yourself..." class="profile-bio"></textarea>
+            <!-- Button to save a user bio -->
+            <button class="btn btn-primary" onclick="saveBio()">Save Bio</button>
+        </section>
 
-    <!-- User Interests -->
-    <section class="profile-section">
-        <h2>Interests</h2>
-        <textarea asp-for="Interests" rows="4" placeholder="What are your interests?" class="profile-interests"></textarea>
-        <button class="btn btn-primary" onclick="saveInterests()">Save Interests</button>
-    </section>
+        <!--  Interests Section -->
+        <section class="profile-section">
+            <h2>Interests</h2>
+            <textarea asp-for="Interests" rows="4" placeholder="What are your interests?" class="profile-interests"></textarea>
+            <!-- Button to save a user bio -->
+            <button class="btn btn-primary" onclick="saveInterests()">Save Interests</button>
+        </section>
 
-    <!-- Attending Events -->
-    <section class="profile-section">
-        <h2>Attending Events</h2>
-        <button class="btn btn-primary" onclick="openEventSearchModal('attending')">Search and Add Events</button>
-        <button class="btn btn-danger" onclick="clearAttendingEvents()">Clear Attending Events</button>
-        <div class="carousel-container">
-            <a class="prev" onclick="prevSlideAttending()">&#10094;</a>
-            <div class="event-slides" id="attending-events-container">
-                @if (ViewBag.AttendingEvents != null && ViewBag.AttendingEvents.Count > 0)
-                {
-                    foreach (var eventInfo in ViewBag.AttendingEvents)
+        <!-- Attending Events Section -->
+        <section class="profile-section">
+            <h2>Attending Events</h2>
+            <!-- Open event search pop up window -->
+            <button class="btn btn-primary" onclick="openEventSearchModal('attending')">Search and Add Events</button>
+            <!-- Clear events button -->
+            <button class="btn btn-danger" onclick="clearAttendingEvents()">Clear Attending Events</button>
+            <!-- Display events in a slideshow manner -->
+            <div class="carousel-container">
+                <!-- Button to move to previous slide -->
+                <a class="prev" onclick="prevSlideAttending()">&#10094;</a>
+                <div class="event-slides" id="attending-events-container">
+                    <!-- Iterate through events and create HTML structure for each -->
+                    @if (ViewBag.AttendingEvents != null && ViewBag.AttendingEvents.Count > 0)
                     {
-                        <div class="event-item">
-                            <!-- Wrap the image with a hyperlink -->
-                            <a href="https://localhost:7064/Events/Details/@eventInfo.Event.EventID" target="_blank">
+                        
+                        foreach (var eventInfo in ViewBag.AttendingEvents)
+                        {
+                            
+                            <div class="event-item">
+                                <a href="https://localhost:7064/Events/Details/@eventInfo.Event.EventID" target="_blank">
+                                    <img src="@eventInfo.FilePath" alt="@eventInfo.Event.EventName Image" class="event-image" />
+                                </a>
+                                <div class="event-details">
+                                    <h3>@eventInfo.Event.EventName</h3>
+                                    <p><strong>Location:</strong> @eventInfo.Event.Location</p>
+                                    <p><strong>Date:</strong> @eventInfo.Event.EventDate.ToString("MMMM dd, yyyy")</p>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p>You are not attending any events yet.</p>
+                    }
+                </div>
+                <!-- Button to move to the next slide -->
+                <a class="next" onclick="nextSlideAttending()">&#10095;</a>
+            </div>
+        </section>
+
+        <!-- Past Events Section -->
+        <section class="profile-section">
+            <h2>Past Events</h2>
+            <!-- Open event search pop up -->
+            <button class="btn btn-primary" onclick="openEventSearchModal('past')">Search and Add Events</button>
+            <!-- Button to clear events -->
+            <button class="btn btn-danger" onclick="clearPastEvents()">Clear Past Events</button>
+            <div class="carousel-container">
+                <!-- Button to move to previous slide -->
+                <a class="prev" onclick="prevSlidePast()">&#10094;</a>
+                <div class="event-slides" id="past-events-container">
+                    <!-- Iterate through events and create HTML structure for each -->
+                    @if (ViewBag.PastEvents != null && ViewBag.PastEvents.Count > 0)
+                    {
+                        
+                        foreach (var eventInfo in ViewBag.PastEvents)
+                        {
+                            <div class="event-item">
                                 <img src="@eventInfo.FilePath" alt="@eventInfo.Event.EventName Image" class="event-image" />
-                            </a>
-
-                            <!-- Event Details -->
-                            <div class="event-details">
-                                <h3>@eventInfo.Event.EventName</h3>
-                                <p><strong>Location:</strong> @eventInfo.Event.Location</p>
-                                <p><strong>Date:</strong> @eventInfo.Event.EventDate.ToString("MMMM dd, yyyy")</p>
+                                <div class="event-details">
+                                    <h3>@eventInfo.Event.EventName</h3>
+                                    <p><strong>Location:</strong> @eventInfo.Event.Location</p>
+                                    <p><strong>Date:</strong> @eventInfo.Event.EventDate.ToString("MMMM dd, yyyy")</p>
+                                </div>
                             </div>
-                        </div>
+                        }
                     }
-                }
-                else
-                {
-                    <p>You are not attending any events yet.</p>
-                }
-            </div>
-
-            <a class="next" onclick="nextSlideAttending()">&#10095;</a>
-        </div>
-    </section>
-
-    <!-- Past Events -->
-    <section class="profile-section">
-        <h2>Past Events</h2>
-        <button class="btn btn-primary" onclick="openEventSearchModal('past')">Search and Add Events</button>
-        <button class="btn btn-danger" onclick="clearPastEvents()">Clear Past Events</button>
-        <div class="carousel-container">
-            <a class="prev" onclick="prevSlidePast()">&#10094;</a>
-            <div class="event-slides" id="past-events-container">
-                @if (ViewBag.PastEvents != null && ViewBag.PastEvents.Count > 0)
-                {
-                    foreach (var eventInfo in ViewBag.PastEvents)
+                    else
                     {
-                        <div class="event-item">
-                            <!-- Display Event Image -->
-                            <img src="@eventInfo.FilePath" alt="@eventInfo.Event.EventName Image" class="event-image" />
-
-                            <!-- Display Event Details -->
-                            <div class="event-details">
-                                <h3>@eventInfo.Event.EventName</h3>
-                                <p><strong>Location:</strong> @eventInfo.Event.Location</p>
-                                <p><strong>Date:</strong> @eventInfo.Event.EventDate.ToString("MMMM dd, yyyy")</p>
-                            </div>
-                        </div>
+                        <p>No past events found.</p>
                     }
-                }
-                else
-                {
-                    <p>No past events found.</p>
-                }
+                </div>
+                <!-- Button to move to the next slide -->
+                <a class="next" onclick="nextSlidePast()">&#10095;</a>
             </div>
-            <a class="next" onclick="nextSlidePast()">&#10095;</a>
-        </div>
-    </section>
-</div>
-
-<!-- Modal Popup -->
-<div id="eventSearchModal" class="modal" style="display:none;">
-    <div class="modal-content">
-        <span class="close" onclick="closeEventSearchModal()">&times;</span>
-        <h3>Search for Events</h3>
-        <input type="text" id="searchInput" placeholder="Search by event or artist name" oninput="searchEvents()" />
-        <div id="search-results"></div>
-        <h4>Selected Events</h4>
-        <ul id="selected-events-list">
-            <!-- User selections will be added here -->
-        </ul>
-        <button class="btn btn-primary" onclick="saveSelectionsToProfile()">Save Selected Events</button>
+        </section>
     </div>
-</div>
+
+    <!-- Event search pop Popup -->
+    <div id="eventSearchModal" class="modal" style="display:none;">
+        <div class="modal-content">
+             <!-- Button to close pop up -->
+            <span class="close" onclick="closeEventSearchModal()">&times;</span>
+            <h3>Search for Events</h3>
+            <!-- Search bar -->
+            <input type="text" id="searchInput" placeholder="Search by event or artist name" oninput="searchEvents()" />
+            <div id="search-results"></div>
+            <h4>Selected Events</h4>
+            <!-- List of selected events -->
+            <ul id="selected-events-list"></ul>
+            <!-- Button to save selections -->
+            <button class="btn btn-primary" onclick="saveSelectionsToProfile()">Save Selected Events</button>
+        </div>
+    </div>
 
 <script>
     let attendingIndex = 0;
     let pastIndex = 0;
+    let currentSelectionType;
     let selectedEvents = { attending: [], past: [] };
 
     // Initialize carousels on page load
@@ -125,233 +138,765 @@
         initializeSlides("attending-events-container");
         initializeSlides("past-events-container");
     });
+    /*
+initializeSlides(containerId)
 
+NAME
+
+    initializeSlides - Initializes the slideshow display
+
+SYNOPSIS
+
+    void initializeSlides(string containerId);
+        containerId --> Which section to populate 
+
+DESCRIPTION
+
+    This function sets up the initial state for the slideshow containers. It retrieves all
+    elements with the class "event-item" inside the specified container, hides all of
+    them, and displays the first slide. 
+
+RETURNS
+
+    None.
+
+AUTHOR
+
+    Kevin Chicas
+
+DATE
+
+   12/10/2024 8:12 PM
+*/
     function initializeSlides(containerId) {
+        // Get the container
         const container = document.getElementById(containerId);
+        // Get all event items 
         const slides = container.getElementsByClassName("event-item");
+        // Handle case where there are no slides
         if (slides.length === 0) return;
-
+        // Iterate through all slides and set display to none to hide them 
         for (let i = 0; i < slides.length; i++) {
             slides[i].style.display = "none";
         }
+        // Display the first slide 
         slides[0].style.display = "block";
     }
 
-    // Carousel functions
+    /**/
+/*
+prevSlideAttending()
+
+NAME
+
+        prevSlideAttending - Move to the previous slide 
+
+SYNOPSIS
+
+        void prevSlideAttending();
+
+DESCRIPTION
+        Decrements the attendingIndex global variable which is used to track 
+        the current slide for the attending section. Will decrement to show the previous slide. Calls the changeSlide
+        function with the updated index and attending events section.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 8:22 PM
+
+*/
+/**/
     function prevSlideAttending() {
+        // Decrement slide index
         attendingIndex--;
+        // Call slide moving function with updated index
         changeSlide(attendingIndex, "attending-events-container");
     }
+        /**/
+/*
+nextSlideAttending()
+
+NAME
+
+        nextSlideAttending - Move to the following slide 
+
+SYNOPSIS
+
+        void nextSlideAttending();
+
+DESCRIPTION
+        Increments the attendingIndex global variable which is used to track 
+        the current slide for the attending section. Will increment to show the following slide. Calls the changeSlide
+        function with the updated index and attending events section.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 8:23 PM
+
+*/
+/**/
 
     function nextSlideAttending() {
+        // Increment slide index
         attendingIndex++;
+        // Call slide moving function with updated index
         changeSlide(attendingIndex, "attending-events-container");
     }
+    /*
+prevSlidePast()
+
+NAME
+
+        prevSlidePast - Move to the previous slide 
+
+SYNOPSIS
+
+        void prevSlidePast();
+
+DESCRIPTION
+        Decrements the pastIndex global variable which is used to track 
+        the current slide for the past attended section. Will decrement to show the previous slide. Calls the changeSlide
+        function with the updated index and past events section.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 8:26 PM
+
+*/
+/**/
 
     function prevSlidePast() {
+        // Decrement slide index
         pastIndex--;
+        // Call slide moving function with updated index
         changeSlide(pastIndex, "past-events-container");
     }
+        /*
+nextSlidePast()
+
+NAME
+
+        nextSlidePast - Move to the following slide 
+
+SYNOPSIS
+
+        void nextSlidePast();
+
+DESCRIPTION
+        Increments the pastIndex global variable which is used to track 
+        the current slide for the past attended section. Will increment to show the following slide. Calls the changeSlide
+        function with the updated index and past events section.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 8:28 PM
+
+*/
+/**/
 
     function nextSlidePast() {
+        // Increment slide index
         pastIndex++;
+        // Call slide moving function with updated index
         changeSlide(pastIndex, "past-events-container");
     }
 
+    /*
+changeSlide(index, containerId)
+
+NAME
+
+        changeSlide - Change the currently displayed slide 
+
+SYNOPSIS
+
+        void changeSlide(int index, string containerId);
+            index       --> The index of slide to show 
+            containerId --> Section where the slide should be changed in 
+
+DESCRIPTION
+        This function updates the current slide to display the previous or following slide. 
+        If the requested index exceeds the the number of available slides, it loops back to the first slide. 
+        If the index is less than 0, it wraps around to the last slide. All slides are hidden ensuring only the desired
+        slide is shown. 
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 8:41 PM
+
+*/
+
     function changeSlide(index, containerId) {
+        // Get the section to change the slide in 
         const container = document.getElementById(containerId);
+        // Get all the slides within the section
         const slides = container.getElementsByClassName("event-item");
+        // Exit function if there are no slides
         if (slides.length === 0) return;
-
+        // If index goes beyond slide count, loop back to the first slide
         if (index >= slides.length) index = 0;
+        // Handle case where index is less than 0 to go  to the last slide 
         if (index < 0) index = slides.length - 1;
-
+        // Do not show all slides 
         for (let i = 0; i < slides.length; i++) {
             slides[i].style.display = "none";
         }
+        // Display the desired slide
         slides[index].style.display = "block";
     }
 
-    // Clear attending events
+    /*
+clearAttendingEvents()
+
+NAME
+
+        clearAttendingEvents - Remove all attending events for the user
+
+SYNOPSIS
+
+        async function clearAttendingEvents();
+
+DESCRIPTION
+        Sends a POST request to the backend to clear all attending events for the user. 
+        The backend endpoint is `/Profile/ClearSelections`.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 8:48 PM
+
+*/
     async function clearAttendingEvents() {
         try {
+            // Send POST request to clear events 
             const response = await fetch('/Profile/ClearSelections', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ type: 'attending' }),
             });
-
+            // Handle backend response 
             if (response.ok) {
                 alert("Attending events cleared!");
                 location.reload();
             } else {
                 alert("Failed to clear attending events.");
             }
+            // Error handling 
         } catch (error) {
             console.error("Error clearing attending events:", error);
         }
     }
 
-    // Clear past events
+    /*
+clearPastEvents()
+
+NAME
+
+        clearPastEvents - Remove all past events for the user
+
+SYNOPSIS
+
+        async function clearPastEvents();
+
+DESCRIPTION
+        Sends a POST request to the backend to clear all past events for the user. 
+        The backend endpoint is `/Profile/ClearSelections`.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 8:52 PM
+
+*/
     async function clearPastEvents() {
         try {
+            // Send POST request to clear events 
             const response = await fetch('/Profile/ClearSelections', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ type: 'past' }),
             });
-
+            // Handle response 
             if (response.ok) {
                 alert("Past events cleared!");
                 location.reload();
             } else {
                 alert("Failed to clear past events.");
             }
+            // Error handling
         } catch (error) {
             console.error("Error clearing past events:", error);
         }
     }
 
-    // Event search modal and saving logic
+    /*
+openEventSearchModal(type)
+
+NAME
+
+        openEventSearchModal - Opens the event search modal for attending or past attended events 
+
+SYNOPSIS
+
+        void openEventSearchModal(string type);
+            type --> Attending or past events
+
+DESCRIPTION
+        This function displays the event search pop up and sets the currentSelectionType 
+        to the provided type to attending or past attended. 
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 8:59 PM
+
+*/
     function openEventSearchModal(type) {
+        // Get event search type 
         currentSelectionType = type;
+        // Display the event search pop up 
         document.getElementById("eventSearchModal").style.display = "block";
     }
+    /*
+closeEventSearchModal()
 
+NAME
+
+        closeEventSearchModal - Closes the event search pop up 
+
+SYNOPSIS
+
+        void closeEventSearchModal();
+
+DESCRIPTION
+        This function hides the event search pop up window and clears the any remaining search.
+        The pop up is reset for future use.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 9:06 PM
+
+*/
     function closeEventSearchModal() {
+        // Hide pop up 
         document.getElementById("eventSearchModal").style.display = "none";
+        // Clear search 
         document.getElementById("searchInput").value = "";
+        // Clear previous search results 
         document.getElementById("search-results").innerHTML = "";
     }
+    /*
+searchEvents()
 
+NAME
+
+        searchEvents - Searches for events based on user input.
+
+SYNOPSIS
+
+        async function searchEvents();
+
+DESCRIPTION
+        This function retrieves the value of the search input field and sends an
+        asynchronous request to the backend to fetch matching events. The results
+        are displayed in the pop up window. 
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 9:12 PM
+
+*/
     async function searchEvents() {
+        // Get the value of the search 
         const query = document.getElementById("searchInput").value;
+        // Handle case where the search is empty 
         if (query.trim() === "") {
             document.getElementById("search-results").innerHTML = "";
             return;
         }
 
         try {
+            // Send GET request to backend with the search query 
             const response = await fetch(`/Event/Search?query=${query}`);
+            // Get the query results as a JSON
             const results = await response.json();
+            // Section where results are displayed 
             const resultsDiv = document.getElementById("search-results");
+            // Clear previous results 
             resultsDiv.innerHTML = "";
-
+            // Iterate through events and create HTML structure 
             results.forEach(event => {
                 const div = document.createElement("div");
                 div.innerHTML = `
                         <p>${event.eventName || "Unnamed Event"}</p>
                         <button onclick="addEventToSelection(${event.eventID}, '${event.eventName || "Unnamed Event"}')">Add</button>
                     `;
+                    // Add result to the section
                 resultsDiv.appendChild(div);
             });
+            // Error handling 
         } catch (error) {
             console.error("Error fetching search results:", error);
         }
     }
+    /*
+addEventToSelection()
 
+NAME
+
+        addEventToSelection - Adds an event to the user's selection list.
+
+SYNOPSIS
+
+        void addEventToSelection(int eventID, string eventName);
+
+            eventID   --> The event identifier 
+            eventName --> The name of the event
+
+DESCRIPTION
+        This function checks if the event specified by its ID is already in the user's
+        current selection list. If the event is not found, it adds
+        the event to the list and updates the displayed list of selected events.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 9:19 PM
+
+*/
     function addEventToSelection(eventID, eventName) {
+        // Check if event is already in selection list 
         if (!selectedEvents[currentSelectionType].some(event => event.id === eventID)) {
+            // Add event to the selection list
             selectedEvents[currentSelectionType].push({ id: eventID, name: eventName });
+            // Update the displayed list of selected events
             updateSelectedEventsList();
         }
     }
+    /*
+updateSelectedEventsList()
 
+NAME
+
+        updateSelectedEventsList - Updates the displayed list of selected events.
+
+SYNOPSIS
+
+        void updateSelectedEventsList();
+
+DESCRIPTION
+        This function retrieves the user's current selection list and generates the HTML structure
+        to display the selected events. Each event in the list is displayed with a "Remove" button, which allows the user
+        to remove the event from the selection.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 9:21 PM
+
+*/
     function updateSelectedEventsList() {
+        // Get the HTML element that displayed the selected events list  
         const list = document.getElementById("selected-events-list");
+        // Update list and create HTML structure for displaying selected events 
         list.innerHTML = selectedEvents[currentSelectionType]
             .map(event => `<li>${event.name} <button onclick="removeEventFromSelection(${event.id})">Remove</button></li>`)
             .join("");
     }
+    /*
+removeEventFromSelection()
 
+NAME
+
+        removeEventFromSelection - Removes an event from the user's selection.
+
+SYNOPSIS
+
+        void removeEventFromSelection(int eventID);
+            eventID  --> The id of the event to be removed 
+
+DESCRIPTION
+        This function removes an event from the current selection list based on its
+        id. After removing the event, it updates the displayed list of selected events.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 9:26 PM
+
+*/
     function removeEventFromSelection(eventID) {
+        // Filter out the event from the selection list 
         selectedEvents[currentSelectionType] = selectedEvents[currentSelectionType].filter(event => event.id !== eventID);
+        // Update list 
         updateSelectedEventsList();
     }
+    /*
+saveSelectionsToProfile()
 
+NAME
+
+        saveSelectionsToProfile - Saves the user's selected events to their profile.
+
+SYNOPSIS
+
+        async function saveSelectionsToProfile();
+
+DESCRIPTION
+        This function collects the user's selected event ids from the current selection 
+        and sends them to the backend using a POST request for saving.
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 9:34 PM
+
+*/
     async function saveSelectionsToProfile() {
         try {
+            // Data to send to the backend 
             const payload = {};
+            // Include what event type and get the event ids 
             payload[currentSelectionType] = selectedEvents[currentSelectionType].map(event => event.id);
-
+            // Make a POST request to the backend 
             const response = await fetch(`/Profile/UpdateSelections`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
-
+            // Indicate to the user the selections have been saved
             if (response.ok) {
                 alert("Events saved successfully!");
+                // Close the pop up 
                 closeEventSearchModal();
+                // Reload the page to show the new changes 
                 location.reload();
             } else {
+                // Handle backend errors 
                 const errorText = await response.text();
-                console.error("Error saving events:", errorText);
                 alert("Error saving events. Please try again.");
             }
+            // Error handling for other issues 
         } catch (error) {
             console.error("Error saving events:", error);
-            alert("An unexpected error occurred. Please try again.");
         }
     }
+    /*
+saveBio()
 
+NAME
+
+        saveBio - Saves the user's bio to their profile.
+
+SYNOPSIS
+
+        async function saveBio();
+
+DESCRIPTION
+        This function retrieves the value of the bio input field and makes a POST request to the `/Profile/UpdateBio` endpoint to save the bio. 
+ 
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 9:42 PM
+
+*/
     async function saveBio() {
+        // Get the user bio 
         const bio = document.querySelector(".profile-bio").value.trim(); // Remove leading/trailing spaces
 
-        // Log the bio value for debugging
-        console.log("Bio being sent:", bio);
 
+        // Handle case where bio is empty and a save is attempted 
         if (!bio) {
             alert("Bio cannot be empty.");
-            console.error("Attempted to save an empty bio.");
             return;
         }
 
         try {
+            // Make a POST request to the backend 
             const response = await fetch('/Profile/UpdateBio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bio),
             });
-
+            // Indicate to user bio is saved if no issues from backend 
             if (response.ok) {
                 alert("Bio saved successfully!");
+                // Handle case where backend fails
             } else {
                 const errorText = await response.text();
                 console.error("Error saving bio:", errorText);
                 alert("Failed to save bio. Please try again.");
             }
+            // Error handling for other issues 
         } catch (error) {
             console.error("Error saving bio:", error);
-            alert("An unexpected error occurred. Please try again.");
         }
     }
+    
 
+    /*
+saveInterests()
 
-    // Save Interests function
+NAME
+
+        saveInterests - Saves the user's interests to their profile.
+
+SYNOPSIS
+
+        async function saveInterests();
+
+DESCRIPTION
+        This function retrieves the value of the interests input field and makes a POST request to the `/Profile/UpdateInterests` endpoint to save the interests. 
+
+RETURNS
+
+        None.
+
+AUTHOR
+
+        Kevin Chicas
+
+DATE
+
+        12/08/2024 9:48 PM
+
+*/
     async function saveInterests() {
-        const interests = document.querySelector(".profile-interests").value.trim(); // Remove leading/trailing spaces
+        // Get the interests 
+        const interests = document.querySelector(".profile-interests").value.trim(); 
 
-        // Log the interests value for debugging
-        console.log("Interests being sent:", interests);
-
+        // Handle case where interests are blank and a save is attempted 
         if (!interests) {
             alert("Interests cannot be empty.");
-            console.error("Attempted to save empty interests.");
             return;
         }
 
         try {
+            // Make a POST request to the backend 
             const response = await fetch('/Profile/UpdateInterests', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(interests),
             });
-
+            // Indicate to the user the save has been completed 
             if (response.ok) {
                 alert("Interests saved successfully!");
             } else {
-                const errorText = await response.text();
+                        // Error handling for other issues
+                        const errorText = await response.text();
                 console.error("Error saving interests:", errorText);
                 alert("Failed to save interests. Please try again.");
             }
@@ -360,5 +905,7 @@
             alert("An unexpected error occurred. Please try again.");
         }
     }
-
 </script>
+
+    </body>
+

@@ -1,0 +1,121 @@
+﻿@model Senior_Project.Models.Profile
+
+@{
+    ViewData["Title"] = "Profile";
+}
+
+<link href="~/css/StyleSheet.css" rel="stylesheet" type="text/css" />
+
+
+<head>
+    <link href="~/css/styles.css" rel="stylesheet" type="text/css" />
+</head>
+
+<div class="profile-container">
+    <h1 class="text-center">Your Profile</h1>
+
+    <!-- User Bio -->
+    <section class="profile-section">
+        <h2>Bio</h2>
+        <textarea asp-for="Bio" rows="4" placeholder="Tell us about yourself..." class="profile-bio"></textarea>
+        <button class="btn btn-primary" onclick="saveBio()">Save Bio</button>
+    </section>
+
+    <!-- User Interests -->
+    <section class="profile-section">
+        <h2>Interests</h2>
+        <textarea asp-for="Interests" rows="4" placeholder="What are your interests?" class="profile-interests"></textarea>
+        <button class="btn btn-primary" onclick="saveInterests()">Save Interests</button>
+    </section>
+
+    <!-- Attending Events -->
+    <section class="profile-section">
+        <h2>Attending Events</h2>
+        <button class="btn btn-primary" onclick="openEventSearchModal('attending')">Search and Add Events</button>
+        <button class="btn btn-danger" onclick="clearAttendingEvents()">Clear Attending Events</button>
+        <div class="carousel-container">
+            <a class="prev" onclick="prevSlideAttending()">&#10094;</a>
+            <div class="event-slides" id="attending-events-container">
+                @if (ViewBag.AttendingEvents != null && ViewBag.AttendingEvents.Count > 0)
+                {
+                    foreach (var eventInfo in ViewBag.AttendingEvents)
+                    {
+                        <div class="event-item">
+                            <!-- Wrap the image with a hyperlink -->
+                            <a href="https://localhost:7064/Events/Details/@eventInfo.Event.EventID" target="_blank">
+                                <img src="@eventInfo.FilePath" alt="@eventInfo.Event.EventName Image" class="event-image" />
+                            </a>
+
+                            <!-- Event Details -->
+                            <div class="event-details">
+                                <h3>@eventInfo.Event.EventName</h3>
+                                <p><strong>Location:</strong> @eventInfo.Event.Location</p>
+                                <p><strong>Date:</strong> @eventInfo.Event.EventDate.ToString("MMMM dd, yyyy")</p>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>You are not attending any events yet.</p>
+                }
+            </div>
+
+            <a class="next" onclick="nextSlideAttending()">&#10095;</a>
+        </div>
+    </section>
+
+    <!-- Past Events -->
+    <section class="profile-section">
+        <h2>Past Events</h2>
+        <button class="btn btn-primary" onclick="openEventSearchModal('past')">Search and Add Events</button>
+        <button class="btn btn-danger" onclick="clearPastEvents()">Clear Past Events</button>
+        <div class="carousel-container">
+            <a class="prev" onclick="prevSlidePast()">&#10094;</a>
+            <div class="event-slides" id="past-events-container">
+                @if (ViewBag.PastEvents != null && ViewBag.PastEvents.Count > 0)
+                {
+                    foreach (var eventInfo in ViewBag.PastEvents)
+                    {
+                        <div class="event-item">
+                            <!-- Display Event Image -->
+                            <img src="@eventInfo.FilePath" alt="@eventInfo.Event.EventName Image" class="event-image" />
+
+                            <!-- Display Event Details -->
+                            <div class="event-details">
+                                <h3>@eventInfo.Event.EventName</h3>
+                                <p><strong>Location:</strong> @eventInfo.Event.Location</p>
+                                <p><strong>Date:</strong> @eventInfo.Event.EventDate.ToString("MMMM dd, yyyy")</p>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p>No past events found.</p>
+                }
+            </div>
+            <a class="next" onclick="nextSlidePast()">&#10095;</a>
+        </div>
+    </section>
+</div>
+
+<!-- Modal Popup -->
+<div id="eventSearchModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeEventSearchModal()">&times;</span>
+        <h3>Search for Events</h3>
+        <input type="text" id="searchInput" placeholder="Search by event or artist name" oninput="searchEvents()" />
+        <div id="search-results"></div>
+        <h4>Selected Events</h4>
+        <ul id="selected-events-list">
+            <!-- User selections will be added here -->
+        </ul>
+        <button class="btn btn-primary" onclick="saveSelectionsToProfile()">Save Selected Events</button>
+    </div>
+</div>
+
+<script>
+ 
+
+</script>

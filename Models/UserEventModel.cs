@@ -21,7 +21,6 @@ namespace Senior_Project.Models
         [MaxLength(100)]
         public string EventName { get; set; }
 
-        [MaxLength(500)]
         public string Description { get; set; }
 
         [Required]

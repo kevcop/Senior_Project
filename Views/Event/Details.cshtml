@@ -10,8 +10,10 @@
 <div>
     <!-- Header section -->
     <h1>@Model.EventName</h1>
+
+
     <!-- Display event details -->
-    <p><strong>Date:</strong> @Model.EventDate.ToString("MMMM dd, yyyy")</p>
+    <p><strong>Date:</strong> @Model.EventDate.ToString("MMMM dd, yyyy 'at' hh:mm tt")</p>
     <p><strong>Location:</strong> @Model.Location</p>
     <p><strong>Category:</strong> @Model.Category</p>
     <p><strong>Description:</strong> @Model.Description</p>

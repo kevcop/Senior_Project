@@ -11,90 +11,121 @@ public static class SeedData
         using (var context = new NewContext2(
             serviceProvider.GetRequiredService<DbContextOptions<NewContext2>>()))
         {
-            // Check if the database has been seeded already
-            //if (context.Events.Any())
-            //{
-            //    return; // Database already seeded
-            //}
+            // List of categories to fetch
+            var categories = new List<string> { "Theater", "Concerts", "Sports" };
 
-            // Fetch event data from Ticketmaster API
-            var eventFromApi = await FetchEventFromApi();
-
-            if (eventFromApi != null)
+            foreach (var category in categories)
             {
-                // Truncate the description to a maximum of 500 characters
-                var truncatedDescription = eventFromApi.Description;
-                var maxDescriptionLength = 500;
-                if (!string.IsNullOrEmpty(truncatedDescription) && truncatedDescription.Length > maxDescriptionLength)
-                {
-                    truncatedDescription = truncatedDescription.Substring(0, maxDescriptionLength);
-                }
+                // Fetch events for each category
+                var eventsFromApi = await FetchEventsFromApi(category);
 
-                // Create a new event entry
-                var newEvent = new Event
+                if (eventsFromApi != null && eventsFromApi.Any())
                 {
-                    UserID = 1, // Assign a valid user ID
-                    EventName = eventFromApi.EventName,
-                    Location = eventFromApi.Location,
-                    Category = eventFromApi.Category,
-                    CreatedDate = DateTime.Now,
-                    IsPublic = true,
-                    IsUserCreated = false,
-                    Description = truncatedDescription, // Use truncated description
-                    ExternalEventID = eventFromApi.ExternalEventID
-                };
-
-                context.Events.Add(newEvent);
-                context.SaveChanges();
-
-                // Save the event image
-                if (!string.IsNullOrEmpty(eventFromApi.ImageUrl))
-                {
-                    var imageData = await DownloadImage(eventFromApi.ImageUrl);
-                    if (imageData != null)
+                    foreach (var eventFromApi in eventsFromApi)
                     {
-                        var eventImage = new EventImage
+                        // Avoid duplicate events based on ExternalEventID
+                        if (!context.Events.Any(e => e.ExternalEventID == eventFromApi.ExternalEventID))
                         {
-                            EventId = newEvent.EventID,
-                            FilePath = SaveImageToUploadsFolder(newEvent.EventID, imageData, "jpg"),
-                            ContentType = "image/jpeg",
-                            Added = DateTime.Now
-                        };
+                            var newEvent = new Event
+                            {
+                                UserID = 1, // Assign a valid user ID
+                                EventName = eventFromApi.EventName,
+                                Location = eventFromApi.Location,
+                                Category = eventFromApi.Category,
+                                CreatedDate = DateTime.Now,
+                                IsPublic = true,
+                                IsUserCreated = false,
+                                Description = eventFromApi.Description,
+                                ExternalEventID = eventFromApi.ExternalEventID,
+                                EventDate = eventFromApi.EventDate // Use event date from API
+                            };
 
-                        context.Images.Add(eventImage);
-                        context.SaveChanges();
+                            context.Events.Add(newEvent);
+                            context.SaveChanges();
+
+                            // Save event images
+                            if (!string.IsNullOrEmpty(eventFromApi.ImageUrl))
+                            {
+                                var imageData = await DownloadImage(eventFromApi.ImageUrl);
+                                if (imageData != null)
+                                {
+                                    var eventImage = new EventImage
+                                    {
+                                        EventId = newEvent.EventID,
+                                        FilePath = SaveImageToUploadsFolder(newEvent.EventID, imageData, "jpg"),
+                                        ContentType = "image/jpeg",
+                                        Added = DateTime.Now
+                                    };
+
+                                    context.Images.Add(eventImage);
+                                    context.SaveChanges();
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
-    private static async Task<EventFromApi> FetchEventFromApi()
+    public static async Task<List<EventFromApi>> FetchEventsFromApi(string category)
     {
         using (var httpClient = new HttpClient())
         {
             try
             {
-                // Replace with your Ticketmaster API URL
-                var apiUrl = "https://app.ticketmaster.com/discovery/v2/events.json?apikey=8QsGHUSyehy7U8hMEzRWSyNNvMHsqdbX";
+                // Limit the API results to 10 using 'size=10' parameter
+                var apiUrl = $"https://app.ticketmaster.com/discovery/v2/events.json?keyword={category}&countryCode=US&apikey=8QsGHUSyehy7U8hMEzRWSyNNvMHsqdbX";
                 var response = await httpClient.GetStringAsync(apiUrl);
 
-                // Parse the JSON response
                 var jsonResponse = JObject.Parse(response);
-                var events = jsonResponse["_embedded"]?["events"]?.First;
+                var eventsArray = jsonResponse["_embedded"]?["events"];
 
-                if (events != null)
+                if (eventsArray != null)
                 {
-                    // Extract event details
-                    return new EventFromApi
+                    var eventsList = new List<EventFromApi>();
+                    foreach (var ev in eventsArray)
                     {
-                        EventName = events["name"]?.ToString(),
-                        Location = events["_embedded"]?["venues"]?.First["city"]?["name"]?.ToString(),
-                        Category = events["classifications"]?.First["segment"]?["name"]?.ToString(),
-                        Description = events["info"]?.ToString(),
-                        ExternalEventID = events["id"]?.ToString(),
-                        ImageUrl = events["images"]?.First["url"]?.ToString()
-                    };
+                        // Extract local date and time and combine them
+                        var localDate = ev["dates"]?["start"]?["localDate"]?.ToString();
+                        var localTime = ev["dates"]?["start"]?["localTime"]?.ToString();
+                        DateTime eventDate;
+
+                        // Combine localDate and localTime if both are valid
+                        if (!string.IsNullOrEmpty(localDate) && !string.IsNullOrEmpty(localTime) &&
+                            DateTime.TryParse($"{localDate} {localTime}", out var parsedDateTime))
+                        {
+                            eventDate = parsedDateTime;
+                        }
+                        else if (!string.IsNullOrEmpty(localDate) && DateTime.TryParse(localDate, out var parsedDate))
+                        {
+                            eventDate = parsedDate; // Use just the date if time is unavailable
+                        }
+                        else
+                        {
+                            eventDate = DateTime.MinValue; // Fallback to a default value
+                        }
+
+                        // Add event details to the list
+                        eventsList.Add(new EventFromApi
+                        {
+                            EventName = ev["name"]?.ToString(),
+                            Location = ev["_embedded"]?["venues"]?.First["city"]?["name"]?.ToString(),
+                            Category = category,
+                            Description = ev["_embedded"]?["venues"]?.First?["generalInfo"]?["generalRule"]?.ToString() ?? "No description available",
+                            ExternalEventID = ev["id"]?.ToString(),
+                            ImageUrl = ev["images"]?.First["url"]?.ToString(),
+                            EventDate = eventDate
+                        });
+
+                        // Stop adding events if we've reached the limit
+                        if (eventsList.Count >= 10)
+                        {
+                            break;
+                        }
+                    }
+
+                    return eventsList;
                 }
             }
             catch (Exception ex)
@@ -105,7 +136,9 @@ public static class SeedData
         return null;
     }
 
-    private static async Task<byte[]> DownloadImage(string imageUrl)
+
+
+    public static async Task<byte[]> DownloadImage(string imageUrl)
     {
         using (var httpClient = new HttpClient())
         {
@@ -121,7 +154,7 @@ public static class SeedData
         }
     }
 
-    private static string SaveImageToUploadsFolder(int eventId, byte[] imageData, string extension)
+    public static string SaveImageToUploadsFolder(int eventId, byte[] imageData, string extension)
     {
         var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/Uploads/events", eventId.ToString());
         if (!Directory.Exists(uploadsFolder))
@@ -136,7 +169,7 @@ public static class SeedData
         return $"/Uploads/events/{eventId}/{fileName}";
     }
 
-    private class EventFromApi
+    public class EventFromApi
     {
         public string EventName { get; set; }
         public string Location { get; set; }
@@ -144,5 +177,8 @@ public static class SeedData
         public string Description { get; set; }
         public string ExternalEventID { get; set; }
         public string ImageUrl { get; set; }
+
+        public DateTime EventDate { get; set; } // Add event date property
+
     }
 }
