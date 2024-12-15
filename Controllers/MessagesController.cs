@@ -92,7 +92,7 @@ namespace Senior_Project.Controllers
                 ChatID = request.ChatId,
                 SenderID = userId.Value,
                 Content = request.Content,
-                Timestamp = DateTime.UtcNow
+                Timestamp = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"))
             };
             // Add message to the database
             _context.Messages.Add(message);

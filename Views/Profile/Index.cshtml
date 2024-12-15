@@ -126,6 +126,82 @@
             <button class="btn btn-primary" onclick="saveSelectionsToProfile()">Save Selected Events</button>
         </div>
     </div>
+    <style>
+
+        /* Event Search Modal Background */
+        #eventSearchModal {
+            display: none; /* Initially hidden */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6); /* Darker semi-transparent background */
+        }
+
+        /* Modal Content Styles */
+        .modal-content {
+            background-color: #ffffff; /* White background */
+            margin: 15% auto;
+            padding: 20px;
+            border: 2px solid #5599ff; /* Vibrant blue border */
+            border-radius: 10px;
+            width: 50%;
+            color: #1b1f38; /* Dark text for contrast */
+        }
+
+            /* Close Button */
+            .modal-content .close {
+                color: #5599ff; /* Blue close button */
+                float: right;
+                font-size: 28px;
+                font-weight: bold;
+                cursor: pointer;
+            }
+
+                .modal-content .close:hover {
+                    color: #ff5555; /* Red on hover */
+                }
+
+        /* Input Field */
+        #searchInput {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #5599ff; /* Blue border */
+            border-radius: 5px;
+        }
+
+        /* Search Results */
+        #search-results {
+            margin-top: 10px;
+            background-color: #f9f9f9; /* Light gray for contrast */
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* Buttons */
+        .modal-content button {
+            background-color: #5599ff; /* Vibrant blue */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+            .modal-content button:hover {
+                background-color: #88bbff; /* Lighter blue on hover */
+            }
+    </style>
 
 <script>
     let attendingIndex = 0;
