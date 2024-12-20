@@ -4,52 +4,59 @@
 
 
 <h2>Create Event</h2>
-
+<!--Event creation form -->
 <form asp-action="Create" method="post" enctype="multipart/form-data">
     <div>
+        <!--Event name input -->
         <label asp-for="EventName"></label>
         <input asp-for="EventName" />
         <span asp-validation-for="EventName" class="text-danger"></span>
     </div>
 
     <div>
+        <!--Event description input -->
         <label asp-for="Description"></label>
         <textarea asp-for="Description"></textarea>
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
 
     <div>
+        <!--Event date input -->
         <label asp-for="EventDate"></label>
         <input asp-for="EventDate" type="datetime-local" />
         <span asp-validation-for="EventDate" class="text-danger"></span>
     </div>
 
     <div>
+        <!--Event location input -->
         <label asp-for="Location"></label>
         <input asp-for="Location" />
         <span asp-validation-for="Location" class="text-danger"></span>
     </div>
 
     <div>
+        <!--Event category input -->
         <label asp-for="Category"></label>
         <input asp-for="Category" />
         <span asp-validation-for="Category" class="text-danger"></span>
     </div>
 
     <div>
+        <!--Event availability input -->
         <label asp-for="IsPublic"></label>
         <input asp-for="IsPublic" type="checkbox" />
         <span asp-validation-for="IsPublic" class="text-danger"></span>
     </div>
 
     <div>
+        <!--File upload section -->
         <label for="files">Upload Event Images</label>
-        <input id="files" name="files" type="file" multiple accept=".jpg, .jpeg, .png, .gif" />
-        <span class="text-muted">Accepted formats: .jpg, .jpeg, .png, .gif. Max size: 5 MB per file.</span>
+        <input id="files" name="files" type="file" multiple accept=".jpg, .jpeg, .png" />
+        <span class="text-muted">Accepted formats: .jpg, .jpeg, .png. Max size: 5 MB per file.</span>
     </div>
 
-    <!-- Preview Images Section -->
-    <div id="image-preview-container">
+    <!-- Image previews -->
+    <div id="image-preview-section">
         <h4>Image Previews:</h4>
         <div id="image-previews" style="display: flex; gap: 10px;"></div>
     </div>
@@ -59,21 +66,28 @@
 
 @section Scripts {
     <script>
+        // Displaying preview of images uploaded by user 
         document.getElementById('files').addEventListener('change', function (event) {
-            const previewContainer = document.getElementById('image-previews');
-            previewContainer.innerHTML = ''; // Clear any existing previews
-
+            const previewSection = document.getElementById('image-previews');
+            previewSection.innerHTML = ''; 
+            // Get the files uploaded 
             const files = event.target.files;
+            // Iterate through files 
             for (const file of files) {
-                if (['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+                // Checking for valid image type 
+                if (['image/jpeg', 'image/png'].includes(file.type)) {
                     const reader = new FileReader();
                     reader.onload = function (e) {
+                        // Display image previous 
                         const img = document.createElement('img');
+                        // Set the image source to file data
                         img.src = e.target.result;
+                        // Image width
                         img.style.width = '100px';
+                        // Image height
                         img.style.height = '100px';
                         img.style.objectFit = 'cover';
-                        previewContainer.appendChild(img);
+                        previewSection.appendChild(img);
                     };
                     reader.readAsDataURL(file);
                 } else {

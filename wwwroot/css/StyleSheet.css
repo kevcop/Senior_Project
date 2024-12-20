@@ -1,20 +1,20 @@
-﻿/* General Styles */
+﻿/* Body styles */
 body {
-    background-color: #1b1f38; /* Deep blue obsidian */
-    color: #e1e5eb; /* Light text for readability */
+    background-color: #1b1f38; 
+    color: #e1e5eb; 
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     margin: 0;
     padding: 0;
 }
 
-/* Divs */
+/* Div styles */
 div {
     margin: auto;
     padding: 10px;
     text-align: center;
 }
 
-/* Centering Utility */
+/* Class to center */
 .center {
     position: relative;
     top: 25%;
@@ -24,27 +24,27 @@ div {
     margin-top: 0px;
 }
 
-/* Forms */
+/* Form styling */
 form {
     margin: 0 auto;
-    max-width: 600px; /* Limit form width */
+    max-width: 600px; 
 }
 
-/* Headings */
+/* Heading styling */
 h1 {
     margin: 10px auto;
     padding: 0;
     color: #e1e5eb;
     text-shadow: 3px 3px 1px black;
-    font-size: 60px; /* Slightly smaller for visibility */
+    font-size: 60px; 
     text-align: center;
 }
 
-/* Buttons */
+/* Button stylin */
 button {
     display: inline-block;
     margin: 10px;
-    background-color: #5599ff; /* Vibrant blue */
+    background-color: #5599ff; 
     color: #fff;
     border: none;
     padding: 10px 20px;
@@ -56,30 +56,30 @@ button {
 }
 
     button:hover {
-        background-color: #88bbff; /* Lighter blue on hover */
-        transform: scale(1.05); /* Slight enlargement effect */
+        background-color: #88bbff; 
+        transform: scale(1.05); 
     }
 
-/* Images */
+/* Image styling */
 img {
-    max-width: 100%; /* Ensures images don't exceed their container */
-    height: auto; /* Maintains aspect ratio */
-    display: block; /* Ensures images don't add unwanted inline spacing */
+    max-width: 100%; 
+    height: auto; 
+    display: block; 
     margin: 10px auto;
 }
 
-/* Section Containers */
+/* Section styling */
 .section {
     padding: 20px;
     margin: 20px auto;
-    background-color: #2a2f50; /* Slightly darker section background */
+    background-color: #2a2f50; 
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    max-width: 1200px; /* Limit overall section width */
-    text-align: left; /* Align text to the left for readability */
+    max-width: 1200px; 
+    text-align: left; 
 }
 
-    /* Section Headings */
+    /* Section heading styling */
     .section h2 {
         color: #e1e5eb;
         text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.5);
@@ -88,38 +88,15 @@ img {
         text-align: center;
     }
 
-    /* Section Images */
+    /* Section image styling */
     .section img {
-        width: 300px; /* Set the standard width */
-        height: 200px; /* Set the standard height */
-        object-fit: cover; /* Ensures the image fits within the set dimensions while maintaining a good aspect ratio */
-        max-width: none; /* Prevents images from resizing based on container size */
+        width: 300px; 
+        height: 200px; 
+        object-fit: cover; 
+        max-width: none; 
         margin: 15px auto;
         border-radius: 8px;
     }
 
 
-/* Responsive Design */
-@media (max-width: 768px) {
-    .section {
-        padding: 10px;
-    }
 
-    h1 {
-        font-size: 36px; /* Smaller headings on smaller screens */
-    }
-
-    button {
-        font-size: 14px;
-        padding: 8px 16px;
-    }
-
-    img {
-        width: 300px; /* Set the standard width */
-        height: 200px; /* Set the standard height */
-        object-fit: cover; /* Ensures the image fits the dimensions */
-        display: block;
-        margin: 10px auto;
-    }
-
-}

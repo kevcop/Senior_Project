@@ -8,12 +8,10 @@ using Senior_Project.SignalR;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();
 
-// Register your DbContexts
 builder.Services.AddDbContext<NewContext2>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("NewContext2") ?? throw new InvalidOperationException("Connection string 'Context_file2' not found.")));
 
 
-// Add services to the container
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();

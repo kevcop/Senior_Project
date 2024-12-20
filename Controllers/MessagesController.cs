@@ -44,7 +44,7 @@ namespace Senior_Project.Controllers
         /// <param name="request"> Holds the message details</param>
         /// <returns> Code to indicate if message was sent or if error occured </returns>
         [HttpPost("/Messages/Send")]
-        public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
+        public async Task<IActionResult> SendMessage([FromBody] MessageDetails request)
         {
             // Get the connection id of a user's session. Each user will have a dedicated connection to the hub to prevent overlapping
             var connectionId = _contextAccessor.HttpContext.Request.Headers["ConnectionId"].ToString();
@@ -92,6 +92,7 @@ namespace Senior_Project.Controllers
                 ChatID = request.ChatId,
                 SenderID = userId.Value,
                 Content = request.Content,
+                // Reference: https://stackoverflow.com/questions/5997570/how-to-convert-datetime-to-eastern-time
                 Timestamp = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"))
             };
             // Add message to the database
@@ -182,7 +183,8 @@ namespace Senior_Project.Controllers
                     chat = new Chat
                     {
                         ChatName = chatName,
-                        CreatedDate = DateTime.UtcNow,
+                        // Reference : https://stackoverflow.com/questions/5997570/how-to-convert-datetime-to-eastern-time
+                        CreatedDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time")),
                         Participants = new List<ChatParticipant>
                 {
                     new ChatParticipant { UserID = userId1 },
@@ -215,7 +217,7 @@ namespace Senior_Project.Controllers
                     Participants = chat.Participants.Select(p => new
                     {
                         p.UserID,
-                        Username = p.User?.username ?? "Unknown"
+                        Username = p.User?.username
                     })
                 };
                 // Return JSON format of chat details 
@@ -275,8 +277,9 @@ namespace Senior_Project.Controllers
                     {
                         ChatID = chatId,
                         UserID = userId.Value,
-                        IsAdmin = false, 
-                        LastReadMessageDate = DateTime.UtcNow
+                        IsAdmin = false,
+                        // Reference: https://stackoverflow.com/questions/5997570/how-to-convert-datetime-to-eastern-time
+                        LastReadMessageDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"))
                     };
                     // Add to database 
                     _context.ChatParticipants.Add(chatParticipant);
@@ -302,18 +305,11 @@ namespace Senior_Project.Controllers
     /// <summary>
     /// Holds message details
     /// </summary>
-    public class SendMessageRequest
+    public class MessageDetails
     {
         public int ChatId { get; set; } 
         public int SenderId { get; set; }
         public string Content { get; set; }
-    }
-    /// <summary>
-    /// Holds id of chat 
-    /// </summary>
-    public class JoinGroupRequest
-    {
-        public int ChatId { get; set; }
     }
 
 }

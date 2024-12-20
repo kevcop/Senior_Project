@@ -89,16 +89,6 @@ namespace Senior_Project.Controllers
             if (user != null)
             {
                 System.Diagnostics.Debug.WriteLine($"Debug: User already exists - Username: {user.username}, Email: {user.emailAddress}");
-                ModelState.AddModelError(string.Empty, "User already exists!");
-                return View("~/Views/Login/Testing.cshtml");
-            }
-
-            // Debugging: Log model state
-            System.Diagnostics.Debug.WriteLine("Debug: ModelState validation:");
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-                System.Diagnostics.Debug.WriteLine($"Debug: ModelState is invalid. Errors: {string.Join(", ", errors)}");
                 return View("~/Views/Login/Testing.cshtml");
             }
 

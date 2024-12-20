@@ -11,7 +11,7 @@
 </head>
 
 <body>
-    <div class="profile-container">
+    <div class="profile-section">
         <h1 class="text-center">Your Profile</h1>
 
         <!-- User Bio Section -->
@@ -39,10 +39,10 @@
             <!-- Clear events button -->
             <button class="btn btn-danger" onclick="clearAttendingEvents()">Clear Attending Events</button>
             <!-- Display events in a slideshow manner -->
-            <div class="carousel-container">
+            <div class="carousel-section">
                 <!-- Button to move to previous slide -->
                 <a class="prev" onclick="prevSlideAttending()">&#10094;</a>
-                <div class="event-slides" id="attending-events-container">
+                <div class="event-slides" id="attending-events-section">
                     <!-- Iterate through events and create HTML structure for each -->
                     @if (ViewBag.AttendingEvents != null && ViewBag.AttendingEvents.Count > 0)
                     {
@@ -79,10 +79,10 @@
             <button class="btn btn-primary" onclick="openEventSearchModal('past')">Search and Add Events</button>
             <!-- Button to clear events -->
             <button class="btn btn-danger" onclick="clearPastEvents()">Clear Past Events</button>
-            <div class="carousel-container">
+            <div class="carousel-section">
                 <!-- Button to move to previous slide -->
                 <a class="prev" onclick="prevSlidePast()">&#10094;</a>
-                <div class="event-slides" id="past-events-container">
+                <div class="event-slides" id="past-events-section">
                     <!-- Iterate through events and create HTML structure for each -->
                     @if (ViewBag.PastEvents != null && ViewBag.PastEvents.Count > 0)
                     {
@@ -128,9 +128,9 @@
     </div>
     <style>
 
-        /* Event Search Modal Background */
+        /* Modal background */
         #eventSearchModal {
-            display: none; /* Initially hidden */
+            display: none;
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -138,23 +138,23 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0, 0, 0, 0.6); /* Darker semi-transparent background */
+            background-color: rgba(0, 0, 0, 0.6); 
         }
 
-        /* Modal Content Styles */
+        /* Modal content */
         .modal-content {
-            background-color: #ffffff; /* White background */
+            background-color: #ffffff; 
             margin: 15% auto;
             padding: 20px;
-            border: 2px solid #5599ff; /* Vibrant blue border */
+            border: 2px solid #5599ff; 
             border-radius: 10px;
             width: 50%;
-            color: #1b1f38; /* Dark text for contrast */
+            color: #1b1f38; 
         }
 
-            /* Close Button */
+            /* Close button */
             .modal-content .close {
-                color: #5599ff; /* Blue close button */
+                color: #5599ff; 
                 float: right;
                 font-size: 28px;
                 font-weight: bold;
@@ -162,22 +162,22 @@
             }
 
                 .modal-content .close:hover {
-                    color: #ff5555; /* Red on hover */
+                    color: #ff5555; 
                 }
 
-        /* Input Field */
+        /* Input */
         #searchInput {
             width: calc(100% - 20px);
             padding: 10px;
             margin: 10px 0;
-            border: 1px solid #5599ff; /* Blue border */
+            border: 1px solid #5599ff; 
             border-radius: 5px;
         }
 
-        /* Search Results */
+        /* Search results */
         #search-results {
             margin-top: 10px;
-            background-color: #f9f9f9; /* Light gray for contrast */
+            background-color: #f9f9f9; 
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
@@ -187,7 +187,7 @@
 
         /* Buttons */
         .modal-content button {
-            background-color: #5599ff; /* Vibrant blue */
+            background-color: #5599ff; 
             color: white;
             border: none;
             padding: 10px 20px;
@@ -199,23 +199,27 @@
         }
 
             .modal-content button:hover {
-                background-color: #88bbff; /* Lighter blue on hover */
+                background-color: #88bbff; 
             }
     </style>
 
 <script>
+    // index for attending slides
     let attendingIndex = 0;
+    // index for past slides 
     let pastIndex = 0;
+    // holds attending or pass selection type
     let currentSelectionType;
+    // array of attending and past events 
     let selectedEvents = { attending: [], past: [] };
 
     // Initialize carousels on page load
     document.addEventListener("DOMContentLoaded", () => {
-        initializeSlides("attending-events-container");
-        initializeSlides("past-events-container");
+        initializeSlides("attending-events-section");
+        initializeSlides("past-events-section");
     });
     /*
-initializeSlides(containerId)
+initializeSlides(sectionId)
 
 NAME
 
@@ -223,13 +227,13 @@ NAME
 
 SYNOPSIS
 
-    void initializeSlides(string containerId);
-        containerId --> Which section to populate 
+    void initializeSlides(string sectionId);
+        sectionId --> Which section to populate 
 
 DESCRIPTION
 
-    This function sets up the initial state for the slideshow containers. It retrieves all
-    elements with the class "event-item" inside the specified container, hides all of
+    This function sets up the initial state for the slideshow sections. It retrieves all
+    elements with the class "event-item" inside the specified section, hides all of
     them, and displays the first slide. 
 
 RETURNS
@@ -246,11 +250,11 @@ DATE
 REFERENCE
     https://www.w3schools.com/howto/howto_js_slideshow.asp
 */
-    function initializeSlides(containerId) {
-        // Get the container
-        const container = document.getElementById(containerId);
+    function initializeSlides(sectionId) {
+        // Get the section
+        const section = document.getElementById(sectionId);
         // Get all event items 
-        const slides = container.getElementsByClassName("event-item");
+        const slides = section.getElementsByClassName("event-item");
         // Handle case where there are no slides
         if (slides.length === 0) return;
         // Iterate through all slides and set display to none to hide them 
@@ -297,7 +301,7 @@ REFERENCE
         // Decrement slide index
         attendingIndex--;
         // Call slide moving function with updated index
-        changeSlide(attendingIndex, "attending-events-container");
+        changeSlide(attendingIndex, "attending-events-section");
     }
         /**/
 /*
@@ -336,7 +340,7 @@ REFERENCE
         // Increment slide index
         attendingIndex++;
         // Call slide moving function with updated index
-        changeSlide(attendingIndex, "attending-events-container");
+        changeSlide(attendingIndex, "attending-events-section");
     }
     /*
 prevSlidePast()
@@ -374,7 +378,7 @@ REFERENCE
         // Decrement slide index
         pastIndex--;
         // Call slide moving function with updated index
-        changeSlide(pastIndex, "past-events-container");
+        changeSlide(pastIndex, "past-events-section");
     }
         /*
 nextSlidePast()
@@ -412,11 +416,11 @@ REFERENCE
         // Increment slide index
         pastIndex++;
         // Call slide moving function with updated index
-        changeSlide(pastIndex, "past-events-container");
+        changeSlide(pastIndex, "past-events-section");
     }
 
     /*
-changeSlide(index, containerId)
+changeSlide(index, sectionId)
 
 NAME
 
@@ -424,9 +428,9 @@ NAME
 
 SYNOPSIS
 
-        void changeSlide(int index, string containerId);
+        void changeSlide(int index, string sectionId);
             index       --> The index of slide to show 
-            containerId --> Section where the slide should be changed in 
+            sectionId --> Section where the slide should be changed in 
 
 DESCRIPTION
         This function updates the current slide to display the previous or following slide. 
@@ -449,11 +453,11 @@ REFERENCE
     https://www.w3schools.com/howto/howto_js_slideshow.asp
 */
 
-    function changeSlide(index, containerId) {
+    function changeSlide(index, sectionId) {
         // Get the section to change the slide in 
-        const container = document.getElementById(containerId);
+        const section = document.getElementById(sectionId);
         // Get all the slides within the section
-        const slides = container.getElementsByClassName("event-item");
+        const slides = section.getElementsByClassName("event-item");
         // Exit function if there are no slides
         if (slides.length === 0) return;
         // If index goes beyond slide count, loop back to the first slide
@@ -848,14 +852,14 @@ DATE
     async function saveSelectionsToProfile() {
         try {
             // Data to send to the backend 
-            const payload = {};
+            const data = {};
             // Include what event type and get the event ids 
-            payload[currentSelectionType] = selectedEvents[currentSelectionType].map(event => event.id);
+            data[currentSelectionType] = selectedEvents[currentSelectionType].map(event => event.id);
             // Make a POST request to the backend 
             const response = await fetch(`/Profile/UpdateSelections`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(data),
             });
             // Indicate to the user the selections have been saved
             if (response.ok) {

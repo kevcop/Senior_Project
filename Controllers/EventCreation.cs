@@ -145,7 +145,7 @@ namespace Senior_Project.Controllers
         private async Task SaveImageAsync(IFormFile file, int eventId)
         {
             // Allowed image types 
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
             // File size for a image (5MB)
             var maxFileSize = 5 * 1024 * 1024; 
 

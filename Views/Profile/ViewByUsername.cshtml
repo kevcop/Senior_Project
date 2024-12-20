@@ -13,11 +13,11 @@
 
 </head>
 
-<div class="profile-container">
+<div class="profile-section">
     <h1 class="text-center">@Model.User.username's Profile</h1>
 
     <!-- Chat Button -->
-    <div class="chat-button-container">
+    <div class="chat-button-section">
         <button class="chat-button" onclick="openChatModal(@Model.User.Id, '@Model.User.username')">Chat</button>
     </div>
 
@@ -38,9 +38,9 @@
         <h2>Attending Events</h2>
         @if (ViewBag.AttendingEvents != null && ViewBag.AttendingEvents.Count > 0)
         {
-            <div class="carousel-container">
+            <div class="carousel-section">
                 <a class="prev" onclick="prevSlideAttending()">&#10094;</a>
-                <div class="event-slides" id="attending-events-container">
+                <div class="event-slides" id="attending-events-section">
                     @foreach (var eventInfo in ViewBag.AttendingEvents)
                     {
                         <div class="event-item">
@@ -69,9 +69,9 @@
         <h2>Past Events</h2>
         @if (ViewBag.PastEvents != null && ViewBag.PastEvents.Count > 0)
         {
-            <div class="carousel-container">
+            <div class="carousel-section">
                 <a class="prev" onclick="prevSlidePast()">&#10094;</a>
-                <div class="event-slides" id="past-events-container">
+                <div class="event-slides" id="past-events-section">
                     @foreach (var eventInfo in ViewBag.PastEvents)
                     {
                         <div class="event-item">
@@ -97,7 +97,6 @@
 </div>
 
 <!-- Chat Modal -->
-<!-- Chat Modal -->
 <div id="chatModal" class="chat-modal">
     <div class="chat-modal-content">
         <span class="close" onclick="closeChatModal()">&times;</span>
@@ -107,7 +106,7 @@
         <div id="chatMessages" class="chat-messages">
             <!-- Messages will be loaded here -->
         </div>
-        <form id="chatForm" onsubmit="sendMessage(event)">
+        <form id="messageForm" onsubmit="sendMessage(event)">
             <textarea id="chatInput" placeholder="Type your message here..." required></textarea>
             <button type="submit">Send</button>
         </form>
@@ -117,7 +116,7 @@
 
 
 <style>
-    /* Modal Styles */
+    /* Modal style */
     .chat-modal {
         display: none;
         position: fixed;
@@ -129,9 +128,9 @@
         overflow: auto;
         background-color: rgba(0, 0, 0, 0.4);
     }
-
+    /* Modal content style */
     .chat-modal-content {
-        background-color: #f8f9fa; /* Subtle grey background for the modal */
+        background-color: #f8f9fa; 
         margin: 10% auto;
         padding: 20px;
         border: 1px solid #ced4da;
@@ -140,19 +139,19 @@
         position: relative;
         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
     }
-
+    /* Header style for modal content */
         .chat-modal-content h2 {
             font-size: 20px;
             font-weight: bold;
-            color: #343a40; /* Darker shade for better visibility */
+            color: #343a40; 
             text-align: center;
             margin-bottom: 20px;
-            margin-top: 0; /* Optional: to minimize the top margin */
+            margin-top: 0;
         }
 
-
+    /* Close button styles */
     .close {
-        color: #6c757d; /* Muted color for close button */
+        color: #6c757d; 
         float: right;
         font-size: 28px;
         font-weight: bold;
@@ -161,22 +160,22 @@
     }
 
         .close:hover {
-            color: #000; /* Darker color on hover */
+            color: #000; 
         }
-
+    /* Message Styles */
     .chat-messages {
         max-height: 300px;
         overflow-y: auto;
         margin-bottom: 20px;
         border: 1px solid #ced4da;
         padding: 10px;
-        background: #ffffff; /* White background for the chat messages */
+        background: #ffffff; 
         border-radius: 5px;
         font-family: Arial, sans-serif;
         font-size: 14px;
-        color: #343a40; /* Black color for the text */
+        color: #343a40; 
     }
-
+        /* Scroll bar styles */
         .chat-messages::-webkit-scrollbar {
             width: 8px;
         }
@@ -187,9 +186,9 @@
         }
 
             .chat-messages::-webkit-scrollbar-thumb:hover {
-                background-color: #6c757d; /* Darker grey on hover */
+                background-color: #6c757d;
             }
-
+/* Chat input style */
     #chatInput {
         width: calc(100% - 110px);
         padding: 10px;
@@ -201,10 +200,10 @@
 
         #chatInput:focus {
             outline: none;
-            border-color: #495057; /* Darker border on focus */
+            border-color: #495057; 
         }
-
-    #chatForm button {
+    /* Button Styles for chat form */
+    #messageForm button {
         padding: 10px 20px;
         background-color: #007bff;
         color: #fff;
@@ -215,7 +214,7 @@
         transition: background-color 0.3s, transform 0.2s;
     }
 
-        #chatForm button:hover {
+        #messageForm button:hover {
             background-color: #0056b3;
             transform: scale(1.05);
         }
@@ -223,11 +222,16 @@
 
 
 <script>
-
-    const currentUserId = @ViewBag.CurrentUserId; // Ensure this is set in your controller
+    // Retrieving passed in user id 
+    const currentUserId = @ViewBag.CurrentUserId; 
+    // Retrieving passed in username
     const currentUserUsername = '@ViewBag.CurrentUserUsername';
 
     // Initialize SignalR connection
+    //Reference: https://learn.microsoft.com/en-us/aspnet/core/signalr/hubs?view=aspnetcore-9.0,
+    // https://learn.microsoft.com/en-us/aspnet/core/signalr/dotnet-client?view=aspnetcore-9.0&tabs=visual-studio,
+    // https://learn.microsoft.com/en-us/aspnet/core/signalr/configuration?view=aspnetcore-9.0&tabs=dotnet
+    // https://learn.microsoft.com/en-us/aspnet/core/tutorials/signalr?view=aspnetcore-9.0&tabs=visual-studio
     const connection = new signalR.HubConnectionBuilder()
         .withUrl("/userMessaging")
         .build();
@@ -361,7 +365,7 @@ DATE
                     // Load conversation
                     fetchMessages(chat.chatID);
  
-
+                    // Chat id 
                     const testChatId = chat.chatID.toString(); 
 
                     // SignalR connection 
@@ -571,12 +575,12 @@ DATE
             return;
         }
         // Data to send to the backend 
-        const payload = {
+        const data = {
             chatId: parseInt(chatId), // Use only ChatId and Content
             content: content,
         };
 
-        console.log("Payload being sent to the server:", payload);
+        console.log("Payload being sent to the server:", data);
         // Send a POST request using the data 
         fetch('/Messages/Send', {
             method: 'POST',
@@ -586,7 +590,7 @@ DATE
                 'ConnectionId': connection.connectionId, 
             },
             // Convert data being sent to JSON 
-            body: JSON.stringify(payload),
+            body: JSON.stringify(data),
         })
             // Handle backend response errors 
             .then(response => {
@@ -615,11 +619,11 @@ DATE
     let pastIndex = 0;
 
     document.addEventListener("DOMContentLoaded", () => {
-        initializeSlides("attending-events-container");
-        initializeSlides("past-events-container");
+        initializeSlides("attending-events-section");
+        initializeSlides("past-events-section");
     });
     /*
-initializeSlides(containerId)
+initializeSlides(sectionId)
 
 NAME
 
@@ -627,13 +631,13 @@ NAME
 
 SYNOPSIS
 
-    void initializeSlides(string containerId);
-        containerId --> Which section to populate 
+    void initializeSlides(string sectionId);
+        sectionId --> Which section to populate 
 
 DESCRIPTION
 
-    This function sets up the initial state for the slideshow containers. It retrieves all
-    elements with the class "event-item" inside the specified container, hides all of
+    This function sets up the initial state for the slideshow sections. It retrieves all
+    elements with the class "event-item" inside the specified section, hides all of
     them, and displays the first slide. 
 
 RETURNS
@@ -648,11 +652,11 @@ DATE
 
    12/10/2024 10:47 PM
 */
-    function initializeSlides(containerId) {
-        // Get the container 
-        const container = document.getElementById(containerId);
+    function initializeSlides(sectionId) {
+        // Get the section 
+        const section = document.getElementById(sectionId);
         // Get all event items 
-        const slides = container.getElementsByClassName("event-item");
+        const slides = section.getElementsByClassName("event-item");
         // Handle case where there are no slides 
         if (slides.length === 0) return;
         // Iterate through all slides and set display to none to hide them 
@@ -699,7 +703,7 @@ REFERENCE
         // Decrement slide index 
         attendingIndex--;
         // Call slide moving function with updated index
-        changeSlide(attendingIndex, "attending-events-container");
+        changeSlide(attendingIndex, "attending-events-section");
     }
         /**/
 /*
@@ -737,7 +741,7 @@ REFERENCE
         // Increment slide index
         attendingIndex++;
         // Call slide moving function with updated index
-        changeSlide(attendingIndex, "attending-events-container");
+        changeSlide(attendingIndex, "attending-events-section");
     }
     /*
 prevSlidePast()
@@ -774,7 +778,7 @@ REFERENCE
         // Decrement slide index
         pastIndex--;
         // Call slide moving function with updated index
-        changeSlide(pastIndex, "past-events-container");
+        changeSlide(pastIndex, "past-events-section");
     }
         /*
 nextSlidePast()
@@ -812,12 +816,12 @@ REFERENCE
         // Increment slide index
         pastIndex++;
         // Call slide moving function with updated index
-        changeSlide(pastIndex, "past-events-container");
+        changeSlide(pastIndex, "past-events-section");
     }
 
     
     /*
-changeSlide(index, containerId)
+changeSlide(index, sectionId)
 
 NAME
 
@@ -825,9 +829,9 @@ NAME
 
 SYNOPSIS
 
-        void changeSlide(int index, string containerId);
+        void changeSlide(int index, string sectionId);
             index       --> The index of slide to show 
-            containerId --> Section where the slide should be changed in 
+            sectionId --> Section where the slide should be changed in 
 
 DESCRIPTION
         This function updates the current slide to display the previous or following slide. 
@@ -850,11 +854,11 @@ REFERENCE
     https://www.w3schools.com/howto/howto_js_slideshow.asp
 */
 
-    function changeSlide(index, containerId) {
+    function changeSlide(index, sectionId) {
         // Get the section to change the slide in  
-        const container = document.getElementById(containerId);
+        const section = document.getElementById(sectionId);
         // Get all the slides within the section
-        const slides = container.getElementsByClassName("event-item");
+        const slides = section.getElementsByClassName("event-item");
         // Exit function if there are no slides
         if (slides.length === 0) return;
         // If index goes beyond slide count, loop back to the first slide

@@ -18,6 +18,110 @@
     </form>
 </div>
 
+<style>
+    /* Chat style */
+    #messages {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #ced4da;
+        padding: 15px;
+        max-height: 400px;
+        overflow-y: auto;
+        background-color: #ffffff;
+        border-radius: 10px; 
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        color: #343a40; 
+    }
+        /* Scrollbar */
+        #messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #messages::-webkit-scrollbar-thumb {
+            background-color: #adb5bd; 
+            border-radius: 4px;
+        }
+
+            #messages::-webkit-scrollbar-thumb:hover {
+                background-color: #6c757d; 
+            }
+
+    /* Message style */
+    .message {
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 10px;
+        max-width: 70%; 
+        line-height: 1.5;
+        font-size: 14px;
+    }
+
+    /* Sent message style */
+    .sent-message {
+        background-color: #007bff; 
+        align-self: flex-end;
+        color: #ffffff; 
+        text-align: right;
+    }
+
+    /* Received message style */
+    .received-message {
+        background-color: #f1f1f1; 
+        align-self: flex-start;
+        color: #343a40; 
+        text-align: left;
+    }
+
+    /* Timestamp style */
+    .timestamp {
+        font-size: 0.85em;
+        color: gray;
+        text-align: right; 
+        margin-top: 5px;
+    }
+
+    /* Chat input */
+    #sendMessageForm {
+        display: flex;
+        margin-top: 10px;
+        align-items: center;
+    }
+
+        #sendMessageForm textarea {
+            width: calc(100% - 110px); 
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 14px;
+            resize: none; 
+        }
+
+            #sendMessageForm textarea:focus {
+                outline: none;
+                border-color: #495057; 
+            }
+
+        /* Send button */
+        #sendMessageForm button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+            #sendMessageForm button:hover {
+                background-color: #0056b3; 
+                transform: scale(1.05); 
+            }
+
+</style>
+
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.2/signalr.min.js"></script>
 
@@ -31,6 +135,10 @@
         console.log(`Current User ID: ${currentUserId}`);
 
         // Establish SignalR connection
+        //Reference: https://learn.microsoft.com/en-us/aspnet/core/signalr/hubs?view=aspnetcore-9.0, 
+        // https://learn.microsoft.com/en-us/aspnet/core/signalr/dotnet-client?view=aspnetcore-9.0&tabs=visual-studio, 
+        // https://learn.microsoft.com/en-us/aspnet/core/signalr/configuration?view=aspnetcore-9.0&tabs=dotnet
+        // https://learn.microsoft.com/en-us/aspnet/core/tutorials/signalr?view=aspnetcore-9.0&tabs=visual-studio
         const connection = new signalR.HubConnectionBuilder()
         // Signal R endpoint
             .withUrl("/userMessaging") 
@@ -162,13 +270,13 @@ DATE
                 return;
             }
             // Details to be sent to the backend
-            const payload = {
+            const data = {
                 chatId: chatId, 
                 senderId: currentUserId, 
                 content: messageContent,
             };
             // Log message request being sent 
-            console.log("Attempting to send message with payload:", payload);
+            console.log("Attempting to send message with data:", data);
 
             try {
                 // Send a POST request to the backend to send message
@@ -181,12 +289,12 @@ DATE
                         "ConnectionId": connection.connectionId 
                     },
                     // Convert to JSON string
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify(data),
                 });
                 // If message is sent
                 if (response.ok) {
                     // Clear message content area for a new message to be sent 
-                    document.getElementById("messageContent").value = ""; // Clear the input field
+                    document.getElementById("messageContent").value = ""; 
                 } else {
                     // Log error if message fails to send
                     const errorMessage = await response.text();
@@ -228,106 +336,4 @@ DATE
     </script>
 }
 
-<style>
-    /* General Chat Styles */
-    #messages {
-        display: flex;
-        flex-direction: column;
-        border: 1px solid #ced4da; /* Updated border for a cleaner look */
-        padding: 15px;
-        max-height: 400px;
-        overflow-y: auto;
-        background-color: #ffffff; /* White background for chat messages */
-        border-radius: 10px; /* Rounded edges for the container */
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        color: #343a40; /* Dark text for messages */
-    }
 
-        #messages::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        #messages::-webkit-scrollbar-thumb {
-            background-color: #adb5bd; /* Grey scrollbar */
-            border-radius: 4px;
-        }
-
-            #messages::-webkit-scrollbar-thumb:hover {
-                background-color: #6c757d; /* Darker grey on hover */
-            }
-
-    /* Message Styles */
-    .message {
-        margin-bottom: 15px;
-        padding: 10px;
-        border-radius: 10px;
-        max-width: 70%; /* Limit message bubble width */
-        line-height: 1.5;
-        font-size: 14px;
-    }
-
-    /* Sent Message (Sender) */
-    .sent-message {
-        background-color: #007bff; /* Blue bubble for sender */
-        align-self: flex-end;
-        color: #ffffff; /* White text */
-        text-align: right;
-    }
-
-    /* Received Message */
-    .received-message {
-        background-color: #f1f1f1; /* Light grey bubble for receiver */
-        align-self: flex-start;
-        color: #343a40; /* Dark text */
-        text-align: left;
-    }
-
-    /* Timestamp */
-    .timestamp {
-        font-size: 0.85em;
-        color: gray;
-        text-align: right; /* Align timestamp to the right */
-        margin-top: 5px;
-    }
-
-    /* Chat Input Section */
-    #sendMessageForm {
-        display: flex;
-        margin-top: 10px;
-        align-items: center;
-    }
-
-        #sendMessageForm textarea {
-            width: calc(100% - 110px); /* Adjusted width for proper alignment */
-            padding: 10px;
-            margin-right: 10px;
-            border: 1px solid #ced4da;
-            border-radius: 5px;
-            font-size: 14px;
-            resize: none; /* Prevent resizing */
-        }
-
-            #sendMessageForm textarea:focus {
-                outline: none;
-                border-color: #495057; /* Darker border on focus */
-            }
-
-        /* Send Button */
-        #sendMessageForm button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: #ffffff;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-        }
-
-            #sendMessageForm button:hover {
-                background-color: #0056b3; /* Darker blue on hover */
-                transform: scale(1.05); /* Slight zoom on hover */
-            }
-
-</style>

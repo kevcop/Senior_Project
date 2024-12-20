@@ -46,11 +46,11 @@ namespace Senior_Project.Controllers
         {
             // Get user id from session
             var userId = HttpContext.Session.GetInt32("UserId");
-            // Case where session does not have a session id 
+            // Case where session does not have a user id 
             if (userId == null)
             {
                 _logger.LogWarning("Session does not contain a valid UserId.");
-                return RedirectToAction("Login", "Account");
+                return Unauthorized();
             }
             // Get profile for user using their ID
             var profile = _context.Profiles.FirstOrDefault(p => p.UserId == userId);
@@ -103,7 +103,7 @@ namespace Senior_Project.Controllers
         /// <summary>
         /// Updates user's profile with new selections for attending future or past events 
         /// </summary>
-        /// <param name="selections"> A dictionary contains event selections </param>
+        /// <param name="selections"> A dictionary containing event selections </param>
         /// <returns> A successful message indicating update went through or an error suggesting otherwise</returns>
         [HttpPost]
         public IActionResult UpdateSelections([FromBody] Dictionary<string, List<int>> selections)

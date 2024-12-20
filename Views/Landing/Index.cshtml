@@ -23,11 +23,11 @@
 <section id="popular-events" style="text-align: center; margin-top: 40px;">
     <h2>Popular Upcoming Events</h2>
     <!-- Carousel style display for popular events -->
-    <div class="carousel-container" style="display: inline-block;">
+    <div class="carousel-section" style="display: inline-block;">
         <!-- Previous slide button -->
         <a class="prev" onclick="prevSlide()">&#10094;</a>
         <!-- Div for event slides -->
-        <div class="event-slides" id="popular-events-container"></div>
+        <div class="event-slides" id="popular-events-section"></div>
         <!-- Next slide button -->
         <a class="next" onclick="nextSlide()">&#10095;</a>
     </div>
@@ -66,16 +66,16 @@
         <!-- Input for zip code-->
         <input type="text" id="zip-code" placeholder="Enter Zip Code">
         <!-- Button for searching by zip code -->
-        <button onclick="debouncedFetch(fetchLocalEvents)">Search by Zip Code</button>
+        <button onclick="delayFetch(fetchLocalEvents)">Search by Zip Code</button>
         <!-- Button for sharing location -->
-        <button onclick="debouncedFetch(fetchEventsByLocation)">Use My Location</button>
+        <button onclick="delayFetch(fetchEventsByLocation)">Use My Location</button>
     </div>
 
     <!-- Carousel style of display for local events -->
-    <div class="carousel-container">
+    <div class="carousel-section">
         <a class="prev" onclick="prevSlideLocal()">&#10094;</a>
-        <!-- Container for local event slides -->
-        <div class="event-slides-local" id="local-events-container"></div>
+        <!-- Section for local event slides -->
+        <div class="event-slides-local" id="local-events-section"></div>
         <!-- Next slide button -->
         <a class="next" onclick="nextSlideLocal()">&#10095;</a>
     </div>
@@ -97,9 +97,9 @@
     // Ticket master API key
     const apiKey = '8QsGHUSyehy7U8hMEzRWSyNNvMHsqdbX'; 
     // Variable to configure popular events
-    const popularEventsContainer = document.getElementById('popular-events-container');
+    const popularEventsSection = document.getElementById('popular-events-section');
     // Variable to configure local events
-    const localEventsContainer = document.getElementById('local-events-container');
+    const localEventsSection = document.getElementById('local-events-section');
     // Track debounce, helps delay a function
     let lastTimeout = null
     // Retrieve passed in User ID from controller
@@ -107,15 +107,15 @@
     
     /**/
     /*
-    debouncedFetch(fetchFn)
+    delayFetch(fetchFn)
 
     NAME
 
-            debouncedFetch -
+            delayFetch -
 
     SYNOPSIS
 
-            void debouncedFetch(Function fetchFn);
+            void delayFetch(Function fetchFn);
                 fetchFn  --> The function to be called after some time 
 
     DESCRIPTION
@@ -139,29 +139,30 @@
     */
     /**/
 
-    function debouncedFetch(fetchFn) {
+    function delayFetch(fetchFn) {
         if (lastTimeout) clearTimeout(lastTimeout);
-        lastTimeout = setTimeout(fetchFn, 300); // Wait 300ms before running the function
+        // Wait 300ms before running the function
+        lastTimeout = setTimeout(fetchFn, 300); 
     }
 
     /**/
     /*
-    clearEventContainer(container)
+    clearEventSection(section)
 
     NAME
 
-            clearEventContainer - Removes all child elements from a specified container.
+            clearEventSection - Removes all child elements from a specified section.
 
     SYNOPSIS
 
-            void clearEventContainer(HTMLElement container);
-                container  --> The DOM element whose contents will be cleared.
+            void clearEventSection(HTMLElement section);
+                section  --> The DOM element whose contents will be cleared.
 
     DESCRIPTION
 
             This function takes a single DOM element as input and removes all
             of its child elements. It is typically used to reset the content
-            of a container before dynamically loading new elements, ensuring
+            of a section before dynamically loading new elements, ensuring
             that outdated or duplicate data is not displayed.
 
     RETURNS
@@ -178,8 +179,8 @@
 
     */
     /**/
-    function clearEventContainer(container) {
-        container.innerHTML = '';
+    function clearEventSection(section) {
+        section.innerHTML = '';
     }
 
     /**/
@@ -259,7 +260,7 @@ async function fetchPopularEvents() {
                 // Save the event to the database
                 await saveEventToDatabase(event);
                 // Add event to event slides
-                updateSingleEvent(event, popularEventsContainer);
+                updateSingleEvent(event, popularEventsSection);
             }
         }
         // Retrieve concert events from Ticketmaster
@@ -272,7 +273,7 @@ async function fetchPopularEvents() {
                 // Save event to the database
                 await saveEventToDatabase(event);
                 // Add event to slides
-                updateSingleEvent(event, popularEventsContainer);
+                updateSingleEvent(event, popularEventsSection);
             }
         }
         // Retrieve theater events from Ticketmaster
@@ -285,7 +286,7 @@ async function fetchPopularEvents() {
                 // Save event to the database
                 await saveEventToDatabase(event);
                 // Add event to the slides
-                updateSingleEvent(event, popularEventsContainer);
+                updateSingleEvent(event, popularEventsSection);
             }
         }
     // Log error if one occurs 
@@ -328,7 +329,7 @@ async function fetchPopularEvents() {
 async function saveEventToDatabase(event) {
     try {
         // Information to be sent to the endpoint
-        const payload = {
+        const data = {
             // Ticketmaster id for event
             eventId: event.id, 
             // Event name, if none is provided use "unnamed event"
@@ -354,7 +355,7 @@ async function saveEventToDatabase(event) {
         const response = await fetch('/Event/SaveEvent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(data)
         });
         // Handle response status CHECK THIS
         if (response.ok) {
@@ -404,7 +405,7 @@ async function saveEventToDatabase(event) {
     /**/
     async function fetchLocalEvents() {
         // Clear slides each time to not overload
-        clearEventContainer(localEventsContainer); 
+        clearEventSection(localEventsSection); 
         // Ensures slides start from beginning event
         resetSlideIndex(); 
         // Extract zip code 
@@ -426,7 +427,7 @@ async function saveEventToDatabase(event) {
                 // If valid results
                 if (sports_data._embedded && sports_data._embedded.events.length > 0) {
                     // Add event to slides
-                    updateSingleEvent(sports_data._embedded.events[0], localEventsContainer);
+                    updateSingleEvent(sports_data._embedded.events[0], localEventsSection);
                 }
                 // Fetch concert related events
                 const concert_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&stateCode=${state}&keyword=Concert`);
@@ -435,7 +436,7 @@ async function saveEventToDatabase(event) {
                 // If valid results
                 if (concert_data._embedded && concert_data._embedded.events.length > 0) {
                     // Add event to local slides
-                    updateSingleEvent(concert_data._embedded.events[0], localEventsContainer);
+                    updateSingleEvent(concert_data._embedded.events[0], localEventsSection);
                 }
                 // Fetch theater events
                 const theater_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&stateCode=${state}&keyword=Theater`);
@@ -444,7 +445,7 @@ async function saveEventToDatabase(event) {
                 // Validate results
                 if (theater_data._embedded && theater_data._embedded.events.length > 0) {
                     // Add event to the local slides
-                    updateSingleEvent(theater_data._embedded.events[0], localEventsContainer);
+                    updateSingleEvent(theater_data._embedded.events[0], localEventsSection);
                 }
             // Log error
             } catch (error) {
@@ -541,7 +542,7 @@ REFERENCE:
     /**/
     function fetchEventsByLocation() {
         // Clears local event slides
-        clearEventContainer(localEventsContainer); 
+        clearEventSection(localEventsSection); 
         // Ensures slides are set to the initial event 
         resetSlideIndex();
         // Checking browser support of geolocation
@@ -559,10 +560,10 @@ REFERENCE:
                     const sports_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&latlong=${lat},${lon}&keyword=Sports`);
                     // Convert response to JSON 
                     const sports_data = await sports_response.json();
-                    // Validate responnse
+                    // Validate response
                     if (sports_data._embedded && sports_data._embedded.events.length > 0) {
                         // Update local slides
-                        updateSingleEvent(sports_data._embedded.events[0], localEventsContainer);
+                        updateSingleEvent(sports_data._embedded.events[0], localEventsSection);
                     }
                     // Fetch concert event
                     const concert_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&latlong=${lat},${lon}&keyword=Concert`);
@@ -571,7 +572,7 @@ REFERENCE:
                     // Validate response
                     if (concert_data._embedded && concert_data._embedded.events.length > 0) {
                         // Add event to slides
-                        updateSingleEvent(concert_data._embedded.events[0], localEventsContainer);
+                        updateSingleEvent(concert_data._embedded.events[0], localEventsSection);
                     }
                     // Fetch theater event
                     const theater_response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?apikey=${apiKey}&latlong=${lat},${lon}&keyword=Theater`);
@@ -580,7 +581,7 @@ REFERENCE:
                     // Validate response
                     if (theater_data._embedded && theater_data._embedded.events.length > 0) {
                         // Add event to local slides
-                        updateSingleEvent(theater_data._embedded.events[0], localEventsContainer);
+                        updateSingleEvent(theater_data._embedded.events[0], localEventsSection);
                     }
                  // Error handling 
                 } catch (error) {
@@ -598,7 +599,7 @@ REFERENCE:
 
     /**/
     /*
-    updateSingleEvent(event, container)
+    updateSingleEvent(event, section)
 
     NAME
 
@@ -606,9 +607,9 @@ REFERENCE:
 
     SYNOPSIS
 
-            void updateSingleEvent(Object event, HTMLElement container);
+            void updateSingleEvent(Object event, HTMLElement section);
                 event     --> The event object 
-                container --> Where to display
+                section --> Where to display
 
     DESCRIPTION
             This function generates the HTML needed to contain a single event and will append it
@@ -629,7 +630,7 @@ REFERENCE
     */
     /**/
     // Function to dynamically generate a single event slide and inject it into the HTML
-    function updateSingleEvent(event, container) {
+    function updateSingleEvent(event, section) {
         // If invalid event object, function returns and does nothing 
         if (!event) return;
         // Create a new div 
@@ -646,13 +647,13 @@ REFERENCE
                             </div>
                         `;
         // Add event to the slideshow
-        container.appendChild(eventItem);
+        section.appendChild(eventItem);
         // Show first slide
-        showSlidesLocal(0, container); 
+        showSlidesLocal(0, section); 
     }
     /**/
 /*
-showSlides(n, container)
+showSlides(n, section)
 
 NAME
 
@@ -660,9 +661,9 @@ NAME
 
 SYNOPSIS
 
-        void showSlides(int n, HTMLElement container);
+        void showSlides(int n, HTMLElement section);
             n         --> Index of slides
-            container --> Where to display
+            section --> Where to display
 
 DESCRIPTION
         Handles displaying a slide based on the current index which is increased or decreased
@@ -685,9 +686,9 @@ REFERENCE
 */
 /**/
 
-    function showSlides(n, container) {
+    function showSlides(n, section) {
         // Get all slides for a section
-        let slides = container.getElementsByClassName("event-item");
+        let slides = section.getElementsByClassName("event-item");
         // Case where there are no slides 
         if (slides.length === 0) return; 
         // Get total number of slides
@@ -705,7 +706,7 @@ REFERENCE
     }
     /**/
 /*
-showSlidesLocal(n, container)
+showSlidesLocal(n, section)
 
 NAME
 
@@ -713,9 +714,9 @@ NAME
 
 SYNOPSIS
 
-        void showSlidesLocal(int n, HTMLElement container);
+        void showSlidesLocal(int n, HTMLElement section);
             n         --> Index of slides 
-            container --> Where to display
+            section --> Where to display
 
 DESCRIPTION
         Handles displaying a slide based on the current index which is increased or decreased
@@ -737,9 +738,9 @@ REFERENCE
 */
 /**/
 
-    function showSlidesLocal(n, container) {
+    function showSlidesLocal(n, section) {
         // Get all slides for the section
-        let slides = container.getElementsByClassName("event-item");
+        let slides = section.getElementsByClassName("event-item");
         // Handle case where there are no slides
         if (slides.length === 0) return; 
         // Get the total number of slides 
@@ -791,7 +792,7 @@ REFERENCE
         // Increment global variable used to track current slide
         currentIndex++;
         // Display slide
-        showSlides(currentIndex, popularEventsContainer);
+        showSlides(currentIndex, popularEventsSection);
     }
 /**/
 /*
@@ -830,7 +831,7 @@ REFERENCE
         // Decrement global variable used to track current slide 
         currentIndex--;
         // Display slide
-        showSlides(currentIndex, popularEventsContainer);
+        showSlides(currentIndex, popularEventsSection);
     }
 
 /**/
@@ -869,7 +870,7 @@ REFERENCE
         // Increment global variable used to track local slides index
         localCurrentIndex++;
         // Display slide 
-        showSlidesLocal(localCurrentIndex, localEventsContainer);
+        showSlidesLocal(localCurrentIndex, localEventsSection);
     }
     /**/
 /*
@@ -907,8 +908,8 @@ REFERENCE
     function prevSlideLocal() {
         // Decrement global variable used to track local slides index 
         localCurrentIndex--;
-        // Disiplay slide
-        showSlidesLocal(localCurrentIndex, localEventsContainer);
+        // Display slide
+        showSlidesLocal(localCurrentIndex, localEventsSection);
     }
 
     // When landing page is loaded, perform the fetching of popular events

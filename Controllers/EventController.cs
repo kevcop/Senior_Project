@@ -70,23 +70,23 @@ namespace Senior_Project.Controllers
         /// <summary>
         /// Saves an event to the database along with the images related to it
         /// </summary>
-        /// <param name="eventDto"> Object that contains the event details</param>
+        /// <param name="EventDetails"> Object that contains the event details</param>
         /// <returns>Different status codes depending on if saving was successful or not </returns>
 
         // Endpoint to save events fetched from Ticketmaster API
         [HttpPost]
-        public async Task<IActionResult> SaveEvent([FromBody] EventDto eventDto)
+        public async Task<IActionResult> SaveEvent([FromBody] EventDetails EventDetails)
         {
             try
             {
                 // Validate event data
-                if (eventDto == null)
+                if (EventDetails == null)
                 {
-                    _logger.LogWarning("Received null EventDto.");
+                    _logger.LogWarning("Received null EventDetails.");
                     return BadRequest("Event data is required.");
                 }
 
-                _logger.LogInformation($"Saving Event: {eventDto.EventName}, ExternalID: {eventDto.EventId}");
+                _logger.LogInformation($"Saving Event: {EventDetails.EventName}, ExternalID: {EventDetails.EventId}");
 
                 // Get userid from the session
                 var userId = _contextAccessor.HttpContext.Session.GetInt32("UserId");
@@ -100,7 +100,7 @@ namespace Senior_Project.Controllers
                 _logger.LogInformation($"Retrieved UserId from session: {userId}");
 
                 // Convert EventId to string for comparison CHECK HERE
-                var externalEventId = eventDto.EventId.ToString();
+                var externalEventId = EventDetails.EventId.ToString();
 
                 // Check if the event already exists using ExternalEventID
                 var existingEvent = _context.Events.FirstOrDefault(e => e.ExternalEventID == externalEventId);
@@ -114,12 +114,12 @@ namespace Senior_Project.Controllers
                 var newEvent = new Event
                 {
                     ExternalEventID = externalEventId, 
-                    EventName = eventDto.EventName,
-                    Description = eventDto.Description,
-                    EventDate = DateTime.Parse(eventDto.EventDate),
-                    Location = eventDto.Location,
-                    Category = eventDto.Category,
-                    IsPublic = eventDto.IsPublic,
+                    EventName = EventDetails.EventName,
+                    Description = EventDetails.Description,
+                    EventDate = DateTime.Parse(EventDetails.EventDate),
+                    Location = EventDetails.Location,
+                    Category = EventDetails.Category,
+                    IsPublic = EventDetails.IsPublic,
                     CreatedDate = DateTime.Now,
                     IsUserCreated = false, // External events are not user-created
                     UserID = userId.Value // Associate the event with the current user
@@ -132,12 +132,12 @@ namespace Senior_Project.Controllers
                 await _context.SaveChangesAsync();
 
                 // Debug amount of images received 
-                _logger.LogInformation($"Saving {eventDto.Images.Count} images for event ID: {eventDto.EventId}");
+                _logger.LogInformation($"Saving {EventDetails.Images.Count} images for event ID: {EventDetails.EventId}");
                 // Iterate through images 
-                foreach (var imageDto in eventDto.Images)
+                foreach (var ImageDetails in EventDetails.Images)
                 {
                     // Download image data 
-                    var imageData = await DownloadImageAsByteArray(imageDto.Url);
+                    var imageData = await DownloadImageAsByteArray(ImageDetails.Url);
                     if (imageData != null)
                     {
                         // Creating a new image entry 
@@ -153,12 +153,12 @@ namespace Senior_Project.Controllers
                     else
                     {
                         // Log error
-                        _logger.LogWarning($"Failed to download image for URL: {imageDto.Url}");
+                        _logger.LogWarning($"Failed to download image for URL: {ImageDetails.Url}");
                     }
                 }
                 // Save image to database
                 await _context.SaveChangesAsync();
-                _logger.LogInformation($"Event {eventDto.EventId} saved successfully.");
+                _logger.LogInformation($"Event {EventDetails.EventId} saved successfully.");
                 // Indicate image has been saved 
                 return Ok();
             }
@@ -248,7 +248,8 @@ namespace Senior_Project.Controllers
                 IsGroupChat = true,
                 IsDiscussion = true,
                 EventId = id,
-                CreatedDate = DateTime.UtcNow
+                // Reference: https://stackoverflow.com/questions/5997570/how-to-convert-datetime-to-eastern-time
+                CreatedDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"))
             };
             // Add discussion to chats database
             _context.Chats.Add(discussion);
@@ -342,7 +343,7 @@ namespace Senior_Project.Controllers
             // Extract the user id 
             var currentUserId = _contextAccessor.HttpContext.Session.GetInt32("UserId");
             // Pass the user id to the view 
-            ViewBag.CurrentUserId = currentUserId ?? 0;
+            ViewBag.CurrentUserId = currentUserId;
             _logger.LogInformation($"Discussion with ID {chatID} found. Redirecting to ViewDiscussion.cshtml.");
             // Display the discussion page 
             return View("ViewDiscussion", chatID); 
@@ -363,16 +364,12 @@ namespace Senior_Project.Controllers
                 .Where(m => m.ChatID == discussionId)
                 .Select(m => new
                 {
-                    // Message id 
+                    
                     m.MessageID,
-                    // Content in message 
                     m.Content,
-                    // Time of message 
                     m.Timestamp,
-                    // Sender name 
                     SenderFirstName = m.Sender.firstName, 
                     SenderLastName = m.Sender.lastName,
-                    // Sender id
                     m.SenderID
                 })
                 // Organize messages by time they were sent 
@@ -419,14 +416,12 @@ namespace Senior_Project.Controllers
             // Message object 
             var message = new Message
             {
-                // Relate message to a chat id 
+                
                 ChatID = messageDto.DiscussionId,
-                // Set the id of the sender
                 SenderID = messageDto.SenderId,
-                // Set the message content
                 Content = messageDto.Content,
-                // Set the message time 
-                Timestamp = DateTime.UtcNow
+                 // Reference: https://stackoverflow.com/questions/5997570/how-to-convert-datetime-to-eastern-time
+                Timestamp = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"))
             };
             // Add message to message database
             _context.Messages.Add(message);
@@ -436,27 +431,12 @@ namespace Senior_Project.Controllers
             _logger.LogInformation($"Message sent successfully with ID {message.MessageID}");
             return Ok(new { message.MessageID });
         }
-
-
-
-
-    }
-
-    public class CreateDiscussionRequest
-    {
-        public string Title { get; set; }
-    }
-
-    public class JoinDiscussionRequest
-    {
-        public int ChatId { get; set; }
-        public int UserId { get; set; }
     }
 
     /// <summary>
     /// Holds the details of an event 
     /// </summary>
-    public class EventDto
+    public class EventDetails
     {
         public int EventId { get; set; }
         public string EventName { get; set; }
@@ -465,12 +445,12 @@ namespace Senior_Project.Controllers
         public string Location { get; set; }
         public string Category { get; set; }
         public bool IsPublic { get; set; }
-        public List<ImageDto> Images { get; set; }
+        public List<ImageDetails> Images { get; set; }
     }
     /// <summary>
     /// Holds the image related details 
     /// </summary>
-    public class ImageDto
+    public class ImageDetails
     {
         public string Url { get; set; }
         public int Width { get; set; }
