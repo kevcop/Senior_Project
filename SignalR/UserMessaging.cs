@@ -15,6 +15,7 @@ namespace Senior_Project.SignalR
         /// <param name="senderName"> The name of the sender </param>
         /// <param name="content"> The message content</param>
         /// <returns></returns>
+        /// Reference: https://learn.microsoft.com/en-us/aspnet/core/signalr/hubs?view=aspnetcore-9.0, https://learn.microsoft.com/en-us/aspnet/core/signalr/dotnet-client?view=aspnetcore-9.0&tabs=visual-studio, https://learn.microsoft.com/en-us/aspnet/core/signalr/configuration?view=aspnetcore-9.0&tabs=dotnet,https://learn.microsoft.com/en-us/aspnet/core/tutorials/signalr?view=aspnetcore-9.0&tabs=visual-studio
         public async Task SendMessage(string chatId, string senderName, string content)
         {
             // Display the message to all participants in the group
@@ -25,6 +26,7 @@ namespace Senior_Project.SignalR
         /// Add a user to the group 
         /// </summary>
         /// <param name="chatId"> The ID of the chat </param>
+        /// Reference: https://learn.microsoft.com/en-us/aspnet/core/signalr/hubs?view=aspnetcore-9.0, https://learn.microsoft.com/en-us/aspnet/core/signalr/dotnet-client?view=aspnetcore-9.0&tabs=visual-studio, https://learn.microsoft.com/en-us/aspnet/core/signalr/configuration?view=aspnetcore-9.0&tabs=dotnet,https://learn.microsoft.com/en-us/aspnet/core/tutorials/signalr?view=aspnetcore-9.0&tabs=visual-studio
         public async Task JoinGroup(string chatId)
         {
             // Debugging statement to verify the chat which is being joined and the connection of the user 
@@ -54,6 +56,7 @@ namespace Senior_Project.SignalR
         /// Maps a connection id to a logged in user 
         /// </summary>
         /// <returns></returns>
+        /// Reference: https://learn.microsoft.com/en-us/aspnet/core/signalr/hubs?view=aspnetcore-9.0, https://learn.microsoft.com/en-us/aspnet/core/signalr/dotnet-client?view=aspnetcore-9.0&tabs=visual-studio, https://learn.microsoft.com/en-us/aspnet/core/signalr/configuration?view=aspnetcore-9.0&tabs=dotnet,https://learn.microsoft.com/en-us/aspnet/core/tutorials/signalr?view=aspnetcore-9.0&tabs=visual-studio
         public override Task OnConnectedAsync()
         {
             // Get the user id for the session 
@@ -78,6 +81,7 @@ namespace Senior_Project.SignalR
         /// </summary>
         /// <param name="exception"> The error that resulted in the disconnect, if there is one </param>
         /// <returns></returns>
+        /// Reference: https://learn.microsoft.com/en-us/aspnet/core/signalr/hubs?view=aspnetcore-9.0, https://learn.microsoft.com/en-us/aspnet/core/signalr/dotnet-client?view=aspnetcore-9.0&tabs=visual-studio, https://learn.microsoft.com/en-us/aspnet/core/signalr/configuration?view=aspnetcore-9.0&tabs=dotnet,https://learn.microsoft.com/en-us/aspnet/core/tutorials/signalr?view=aspnetcore-9.0&tabs=visual-studio
         public override Task OnDisconnectedAsync(Exception? exception)
         {
             // Search for the user connection id 
